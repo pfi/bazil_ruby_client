@@ -25,7 +25,7 @@ module Bazil
     def delete_application(name)
       res, body = @http_cli.delete("/apps/#{name}")
       raise "Failed to delete application: #{name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      true
+      true # TODO: return better information
     end
 
     def application(name)
