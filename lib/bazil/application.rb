@@ -61,16 +61,10 @@ module Bazil
     end
 
     def status
-      return # FIXME: current bazil_server doesn't have
-
       res = @http_cli.get(gen_uri('status'))
       raise "Failed to get status of the application: #{@name}" unless res.code =~ /2[0-9][0-9]/
       # TODO: format result
-      if res.body == ""
-        {}
-      else
-        JSON.parse(res.body)
-      end
+      JSON.parse(res.body)
     end
 
     private
