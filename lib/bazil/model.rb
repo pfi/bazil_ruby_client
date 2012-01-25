@@ -15,7 +15,7 @@ module Bazil
 
     def status
       res = @http_cli.get(gen_uri('status'))
-      raise "Failed to get status of the model: application = #{@application.name}, model = #{@name}" unless res.code =~ /2[0-9][0-9]/
+      raise "Failed to get status of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
@@ -25,8 +25,29 @@ module Bazil
 
     def train(label, data)
       data = %({"label": "#{label}", "data": #{data.to_json}})
-      post('train', data, "Failed to post training data")
-      true
+      body = post('training_data', data, "Failed to post training data")
+      JSON.parse(body)
+    end
+
+    def training_data(id)
+      res = @http_cli.get(gen_uri("training_data/#{id}"))
+      raise "Failed to get training data of the model: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
+    def list_training_data(condition)
+      # TODO: validate parameter
+      condition[:page] ||= 1
+      condition[:pagesize] ||= 10
+      res = @http_cli.get(gen_uri("training_data?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}"))
+      raise "Failed to get training data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
+    def put_training_data(data)
+      data = %({"data": #{data.to_json}})
+      body = post('training_data', data, "Failed to post training data")
+      JSON.parse(body)
     end
 
     def classify(data)
@@ -38,7 +59,7 @@ module Bazil
     private
     def post(path, data, error_message)
       res = @http_cli.post(gen_uri(path), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise error_message + ": application = #{@application.name}, model = #{@name}" unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
+      raise "#{error_message}: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
       res.body
     end
 
@@ -48,6 +69,10 @@ module Bazil
       else
         "/apps/#{@application.name}/models/#{@name}"
       end
+    end
+
+    def error_suffix
+      "application = #{@application.name}, model = #{@name}"
     end
   end # module Model
 end # module Bazil
