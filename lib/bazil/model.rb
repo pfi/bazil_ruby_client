@@ -56,9 +56,9 @@ module Bazil
       JSON.parse(body)
     end
 
-    def classify(data)
-      data = %({"data": #{data.to_json}})
-      res = JSON.parse(post('classify', data, "Failed to post data for classification"))
+    def query(data)
+      data = data.to_json
+      res = JSON.parse(post('query', data, "Failed to post data for query"))
       return res['max_label'], res
     end
 
