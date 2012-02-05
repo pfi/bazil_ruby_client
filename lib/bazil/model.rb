@@ -39,9 +39,23 @@ module Bazil
       # TODO: validate parameter
       condition[:page] ||= 1
       condition[:pagesize] ||= 10
-      res = @http_cli.get(gen_uri("training_data?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}"))
-      raise "Failed to get training data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
+      if condition.has_key?(:query)
+        res = post("training_data/query?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}",
+                   condition[:query].to_json, "Failed to query training data of the model")
+        # TODO: query API does not support page/pagesize yet,
+        # so this client manually emulates it. Remove this code
+        # after bazil_server supported page/pagesize.
+        res = JSON.parse(res)
+        len = condition[:pagesize]
+        start = (condition[:page] - 1) * len
+        res['training_data'] = res['training_data'][start...(start + len)]
+        res['training_data'] = [] unless res['training_data']
+        res
+      else
+        res = @http_cli.get(gen_uri("training_data?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}"))
+        raise "Failed to get training data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+        JSON.parse(res.body)
+      end
     end
 
     def clear_training_data
