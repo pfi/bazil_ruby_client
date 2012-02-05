@@ -44,6 +44,12 @@ module Bazil
       JSON.parse(res.body)
     end
 
+    def clear_training_data
+      res = @http_cli.delete(gen_uri("training_data"))
+      raise "Failed to clear training_data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      true
+    end
+
     def put_training_data(data)
       data = %({"data": #{data.to_json}})
       body = post('training_data', data, "Failed to post training data")
