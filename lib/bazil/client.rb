@@ -9,6 +9,18 @@ module Bazil
       @http_cli = Net::HTTP.new(host, port)
     end
 
+    def status
+      res = @http_cli.get('/status')
+      raise "Failed to get status of the server" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
+    def config
+      res = @http_cli.get('/config')
+      raise "Failed to get config of the server" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
     def application_names
       res = @http_cli.get('/apps')
       # TODO: error check
