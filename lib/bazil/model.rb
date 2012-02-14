@@ -20,7 +20,12 @@ module Bazil
       JSON.parse(res.body)
     end
 
-    # TODO: config
+    def config
+      res = @http_cli.get(gen_uri('config'))
+      raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
     # TODO: retrain
     # TODO: label APIs
 
