@@ -10,38 +10,52 @@ module Bazil
     end
 
     def status
-      res = @http_cli.get('/status')
+      res = @http_cli.get(gen_uri('status'))
       raise "Failed to get status of the server" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def config
-      res = @http_cli.get('/config')
+      res = @http_cli.get(gen_uri('config'))
       raise "Failed to get config of the server" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def application_names
-      res = @http_cli.get('/apps')
+      res = @http_cli.get(gen_uri('apps'))
       # TODO: error check
       JSON.parse(res.body)['application_names']
     end
 
     def create_application(name)
       data = %({"application_name": "#{name}"})
-      res, body = @http_cli.post('/apps', data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      res, body = @http_cli.post(gen_uri('apps'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "Failed to create application: #{name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      Application.new(@http_cli, name)
+      Application.new(self, name)
     end
 
     def delete_application(name)
-      res, body = @http_cli.delete("/apps/#{name}")
+      res, body = @http_cli.delete(gen_uri("apps/#{name}"))
       raise "Failed to delete application: #{name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
       true # TODO: return better information
     end
 
     def application(name)
-      Application.new(@http_cli, name)
+      Application.new(self, name)
+    end
+
+    def http_client
+      @http_cli
+    end
+
+    # TODO: make this changable
+    def api_version
+      'v1'
+    end
+
+    private
+    def gen_uri(path)
+      "/#{api_version}/#{path}"
     end
   end # class Client
 end # module Bazil

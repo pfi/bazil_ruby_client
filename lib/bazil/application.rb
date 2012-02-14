@@ -6,8 +6,9 @@ module Bazil
   class Application
     attr_reader :name
 
-    def initialize(http_cli, name)
-      @http_cli = http_cli
+    def initialize(client, name)
+      @client = client
+      @http_cli = client.http_client
       @name = name
 
       status
@@ -47,7 +48,7 @@ module Bazil
       data = %({"model_name": "#{model_name}", "config": #{config.to_json}})
       res = @http_cli.post(gen_uri("models"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "Failed to create a model: application = #{@name}, model = #{model_name}" unless res.code =~ /2[0-9][0-9]/
-      Model.new(@http_cli, self, model_name)
+      Model.new(@client, self, model_name)
     end
 
     def delete_model(model_name)
@@ -57,7 +58,7 @@ module Bazil
     end
 
     def model(model_name)
-      Model.new(@http_cli, self, model_name)
+      Model.new(@client, self, model_name)
     end
 
     def status
@@ -70,9 +71,9 @@ module Bazil
     private
     def gen_uri(path = nil)
       if path
-        "/apps/#{@name}/#{path}"
+        "/#{@client.api_version}/apps/#{@name}/#{path}"
       else
-        "/apps/#{@name}"
+        "/#{@client.api_version}/apps/#{@name}"
       end
     end
   end # class Application

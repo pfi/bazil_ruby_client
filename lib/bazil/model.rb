@@ -5,8 +5,9 @@ module Bazil
   class Model
     attr_reader :application, :name
 
-    def initialize(http_cli, app, name)
-      @http_cli = http_cli
+    def initialize(client, app, name)
+      @client = client
+      @http_cli = client.http_client
       @application = app
       @name = name
 
@@ -85,9 +86,9 @@ module Bazil
 
     def gen_uri(path = nil)
       if path
-        "/apps/#{@application.name}/models/#{@name}/#{path}"
+        "/#{@client.api_version}/apps/#{@application.name}/models/#{@name}/#{path}"
       else
-        "/apps/#{@application.name}/models/#{@name}"
+        "/#{@client.api_version}/apps/#{@application.name}/models/#{@name}"
       end
     end
 
