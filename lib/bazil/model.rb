@@ -71,6 +71,15 @@ module Bazil
       JSON.parse(body)
     end
 
+    def update_training_data(id, label, data)
+      new_data = {}
+      new_data['label'] = label if label
+      new_data['data'] = data if data
+      new_data = new_data.to_json
+      send(:put, "training_data/#{id}", new_data, "Failed to update training data")
+      true
+    end
+
     def query(data)
       data = data.to_json
       res = JSON.parse(post('query', data, "Failed to post data for query"))
@@ -79,7 +88,11 @@ module Bazil
 
     private
     def post(path, data, error_message)
-      res = @http_cli.post(gen_uri(path), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      send(:post, path, data, error_message)
+    end
+
+    def send(method, path, data, error_message)
+      res = @http_cli.method(method).call(gen_uri(path), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "#{error_message}: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
       res.body
     end
