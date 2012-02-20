@@ -35,6 +35,11 @@ module Bazil
       JSON.parse(body)
     end
 
+    def retrain(option = {})
+      post('retrain', option.to_json, "Failed to retrain the model")
+      true
+    end
+
     def training_data(id)
       res = @http_cli.get(gen_uri("training_data/#{id}"))
       raise "Failed to get training data of the model: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
