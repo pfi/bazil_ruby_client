@@ -50,15 +50,10 @@ module Bazil
       # TODO: validate parameter
       condition[:page] ||= 1
       condition[:pagesize] ||= 10
-      if condition.has_key?(:query)
-        res = post("training_data/query?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}",
-                   condition[:query].to_json, "Failed to query training data of the model")
-        JSON.parse(res)
-      else
-        res = @http_cli.get(gen_uri("training_data?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}"))
-        raise "Failed to get training data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
-        JSON.parse(res.body)
-      end
+      condition[:query] ||= { :version => '1' }
+      res = post("training_data/query?page=#{condition[:page]}&pagesize=#{condition[:pagesize]}",
+                 condition[:query].to_json, "Failed to query training data of the model")
+      JSON.parse(res)
     end
 
     def clear_training_data
