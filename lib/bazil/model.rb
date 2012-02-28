@@ -26,6 +26,11 @@ module Bazil
       JSON.parse(res.body)
     end
 
+    def update_config(conf)
+      res = send(:put, nil, conf.to_json, "Failed to updated config")
+      true
+    end
+
     # TODO: retrain
     # TODO: label APIs
 
