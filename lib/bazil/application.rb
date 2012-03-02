@@ -22,10 +22,6 @@ module Bazil
 
     def create_model(model_name, config)
       @@default_config = {
-        "classifier_config" => {
-          "method" => "nherd",
-          "regularization_weight" => 1.0
-        },
         "converter_config" => {
           "string_filter_types" => {},
           "string_filter_rules" => [],
