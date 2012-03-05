@@ -45,6 +45,12 @@ module Bazil
       true
     end
 
+    def labels
+      res = @http_cli.get(gen_uri('labels'))
+      raise "Failed to get labels the model has: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)['labels']
+    end
+
     def training_data(id)
       res = @http_cli.get(gen_uri("training_data/#{id}"))
       raise "Failed to get training data of the model: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/

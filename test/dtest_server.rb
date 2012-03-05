@@ -77,46 +77,6 @@ TestCase 'Bazil-server app' do
 end
 
 =begin
-random_model_creation = lambda {
-  set :model_name, 'random'
-  set :model_body, {'model_name' => model_name,
-    'config' => {
-      'converter_config' => JSON.parse(File.read(CONFIG_PATH)),
-      'classifier_config' => {
-        'method' => 'nherd',
-        'regularization_weight' => 0.2
-      }
-    }
-  }.to_json
-
-  # Remove previous training data
-  Mongo::Connection.new(*MONGODB_SERVERS.split(':')).db("bazil_#{app_name}").drop_collection(model_name)
-
-  result = JSON.parse(post.call(model_body, "/apps/#{app_name}/models").body)
-  assert_equal("Created '#{model_name}' model", result['message'])
-}
-
-random_model_deletion = lambda {
-  result = JSON.parse(delete.call("/apps/#{app_name}/models/#{model_name}").body)
-  assert_equal("Deleted '#{model_name}' model", result['message'])
-}
-
-# TODO: Merge training_data API
-TestCase 'Bazil-server label' do
-  beforeCase &setup_environment
-  before &test_app_creation
-  before &random_model_creation
-
-  after &random_model_deletion
-  after &test_app_deletion
-  afterCase &cleanup_environment
-
-  test 'labels' do
-    result = JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/labels"))
-    assert_equal([], result['labels'])
-  end
-end
-
 TestCase 'Bazil-server training-data' do
   beforeCase &setup_environment
   before &test_app_creation
