@@ -53,7 +53,6 @@ TestCase 'Bazil-server model' do
     config_cc = config['classifier_config']
     assert_equal('nherd', config_cc['method'])
     assert_equal('0.2', config_cc['regularization_weight'].to_s[0..2])
-    assert_equal(1, config['revision'])
 
     classifier_config = {
       'classifier_config' => {
@@ -67,7 +66,6 @@ TestCase 'Bazil-server model' do
     config_cc = config['classifier_config']
     assert_equal('arow', config_cc['method'])
     assert_equal('0.4', config_cc['regularization_weight'].to_s[0..2])
-    assert_equal(2, config['revision'])
   end
 
   test 'update_with_invalid_config', :params => ['', '{', '1234', '"D"'] do
