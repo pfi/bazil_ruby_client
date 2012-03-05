@@ -4,23 +4,11 @@ require 'json'
 require 'test_helper'
 require 'bazil'
 
-setup_environment = lambda {
-  set :host, 'localhost'
-  set :port, BAZIL_PORT
-  set :client, Bazil::Client.new(host, port)
-
-  set :version, "/v1"
-  set :app_name, APP_NAME
-}
-
-cleanup_environment = lambda {
-  client.delete_all_applications
-}
-
 TestCase 'Bazil-server app' do
-  before &setup_environment
+  include_context 'bazil_case_utils'
 
-  after &cleanup_environment
+  before { setup_environment }
+  after { cleanup_environment }
 
   test 'get_status' do
     result = client.status

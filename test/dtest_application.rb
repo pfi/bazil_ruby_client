@@ -6,29 +6,10 @@ require 'json'
 require 'test_helper'
 require 'bazil'
 
-setup_environment = lambda {
-  set :host, 'localhost'
-  set :port, BAZIL_PORT
-  set :client, Bazil::Client.new(host, port)
-
-  set :version, "/v1"
-  set :app_name, APP_NAME
-}
-
-cleanup_environment = lambda {
-  client.delete_all_applications
-}
-
-test_app_creation = lambda { 
-  set :app, client.create_application(app_name)
-}
-
-test_app_deletion = lambda { 
-  client.delete_application(app_name)
-}
-
 TestCase 'Bazil-server model' do
-  beforeCase &setup_environment
+  include_context 'bazil_case_utils'
+
+  beforeCase { setup_environment }
   beforeCase do
     set :model_name, 'random'
     set :model_config, {
@@ -39,10 +20,10 @@ TestCase 'Bazil-server model' do
       }
     }
   end
-  before &test_app_creation
+  before { create_default_application }
 
-  after &test_app_deletion
-  afterCase &cleanup_environment
+  after { delete_default_application }
+  afterCase { cleanup_environment }
 
   test 'get_empty_models' do
     result = app.model_names

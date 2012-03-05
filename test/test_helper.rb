@@ -106,3 +106,26 @@ class Array
     self
   end unless method_defined? :repeated_permutation
 end
+
+SharedContext 'bazil_case_utils' do
+  def setup_environment
+    set :host, 'localhost'
+    set :port, BAZIL_PORT
+    set :client, Bazil::Client.new(host, port)
+
+    set :version, "/v1"
+    set :app_name, APP_NAME
+  end
+
+  def cleanup_environment
+    client.delete_all_applications
+  end
+
+  def create_default_application
+    set :app, client.create_application(app_name)
+  end
+
+  def delete_default_application
+    client.delete_application(app_name)
+  end
+end
