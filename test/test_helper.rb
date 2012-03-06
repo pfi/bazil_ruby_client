@@ -128,7 +128,9 @@ SharedContext 'bazil_case_utils' do
   def delete_default_application
     client.delete_application(app_name)
   end
+end
 
+SharedContext 'bazil_model_utils' do # require bazil_case_utils
   def create_random_model
     set :model_name, 'random'
     set :model_config, {
@@ -147,5 +149,9 @@ SharedContext 'bazil_case_utils' do
 
   def delete_random_model
     app.delete_model(model_name)
+  end
+
+  def get_training_data_size
+    model.list_training_data({})['training_data'].size
   end
 end

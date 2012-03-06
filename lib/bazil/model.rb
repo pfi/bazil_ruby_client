@@ -80,11 +80,19 @@ module Bazil
     end
 
     def update_training_data(id, label, data)
+      # TODO: type check of id
       new_data = {}
       new_data['label'] = label if label
       new_data['data'] = data if data
       new_data = new_data.to_json
       send(:put, "training_data/#{id}", new_data, "Failed to update training data")
+      true
+    end
+
+    def delete_training_data(id)
+      # TODO: type check of id
+      res = @http_cli.delete(gen_uri("training_data/#{id}"))
+      raise "Failed to delete a training data: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       true
     end
 

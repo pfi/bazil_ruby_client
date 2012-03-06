@@ -7,6 +7,8 @@ require 'bazil'
 # TODO: Merge training_data API
 TestCase 'Bazil-server label' do
   include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+
   beforeCase { setup_environment }
   before { create_default_application }
   before { create_random_model }
