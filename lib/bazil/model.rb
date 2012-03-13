@@ -62,6 +62,8 @@ module Bazil
       condition[:page] ||= 1
       condition[:page_size] ||= 10
       condition[:query] ||= { :version => '1' }
+      condition[:query][:version] = '1' unless condition[:query][:version]
+
       res = post("training_data/query?page=#{condition[:page]}&page_size=#{condition[:page_size]}",
                  condition[:query].to_json, "Failed to query training data of the model")
       JSON.parse(res)
