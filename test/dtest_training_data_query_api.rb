@@ -4,16 +4,8 @@ require 'json'
 require 'test_helper'
 require 'bazil'
 
-TestCase 'Bazil-server training-data-query' do
-  include_context 'bazil_case_utils'
-  include_context 'bazil_model_utils'
-
-  beforeCase do
-    setup_environment
-
-    create_default_application
-    create_random_model
-
+SharedContext 'training_data_query_test_util' do
+  def prepare_training_data
     # add training data
     # string value data
     ['redbull', 'rockstar', 'coke'].each { |value|
@@ -31,6 +23,20 @@ TestCase 'Bazil-server training-data-query' do
     }
 
     set :training_data_size, get_training_data_size
+  end
+end
+
+TestCase 'Bazil-server training-data-query label' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_query_test_util'
+
+  beforeCase do
+    setup_environment
+
+    create_default_application
+    create_random_model
+    prepare_training_data
   end
 
   afterCase do
@@ -182,239 +188,267 @@ TestCase 'Bazil-server training-data-query' do
     expect_equal(1, result['training_data'].size)
     expect_equal('C++', result['training_data'][0]['label'])
   end
+end
 
-=begin
-  # TODO: split to other TestCase
+TestCase 'Bazil-server training-data-query field' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_query_test_util'
+
+  beforeCase do
+    setup_environment
+
+    create_default_application
+    create_random_model
+    prepare_training_data
+  end
+
+  afterCase do
+    delete_random_model
+    delete_default_application
+    cleanup_environment
+  end
 
   test 'exist_query_with_field', :params => combine([['string_feature', 3], ['num_feature', 3], ['feature1', 3], ['feature2', 3]], [true, false]) do
-    num = add_training_data.call()
-
     exist = param[2]
-    query = {'version' => 1, 'field' =>
+    query = {:version => 1, :field =>
       {
-        param[0] => {'exist' => exist}
+        param[0] => {:exist => exist}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_equal(exist ? param[1] : num - param[1], result['training_data'].size)
+    result = model.list_training_data({:query => query})
+    expect_equal(exist ? param[1] : training_data_size - param[1], result['training_data'].size)
   end
 
-  test 'all_query_with_field_pattern' do
-    add_training_data.call()
-
-    query = {'version' => 1, 'field' =>
+  test 'all_query_with_field_pattern_single' do
+    query = {:version => 1, :field =>
       {
-        'string_feature' => {'all' => [{'pattern' => '.*'}]}
+        'string_feature' => {:all => [{:pattern => '.*'}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(3, result['training_data'].size)
+  end
 
-    query = {'version' => 1, 'field' =>
+  test 'all_query_with_field_pattern_multi' do
+    query = {:version => 1, :field =>
       {
-        'string_feature' => {'all' => [{'pattern' => '^r.*'}, {'pattern' => '.*l$'}]}
+        'string_feature' => {:all => [{:pattern => '^r.*'}, {:pattern => '.*l$'}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('redbull', result['training_data'][0]['data']['string_feature'])
-
-    query = {'version' => 1, 'field' =>
-      {
-        'string_feature' => {'all' => [{'pattern' => '.*'}], 'not' => [{'pattern' => '^c.*'}]}
-      }
-    }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_equal(2, result['training_data'].size)
   end
 
-  test 'all_query_with_range_pattern' do
-    add_training_data.call()
-
-    query = {'version' => 1, 'field' =>
+  test 'all_query_with_range_pattern_single' do
+    query = {:version => 1, :field =>
       {
-        'num_feature' => {'all' => [{'range' => {'from' => -100_000, 'to' => 100_000}}]}
+        'num_feature' => {:all => [{:range => {:from => -100_000, :to => 100_000}}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(3, result['training_data'].size)
+  end
 
-    # Exact query
-    query = {'version' => 1, 'field' =>
+  test 'all_query_with_range_pattern_multi' do
+    query = {:version => 1, :field =>
       {
-        'num_feature' => {'all' => [{'range' => {'from' => 100_000, 'to' => 100_000}}]}
+        'num_feature' => {:all => [{:range => {:from => -100, :to => 1000}}, {:range => {:from => 200, :to => 1000}}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_equal(1, result['training_data'].size)
-    expect_equal(100_000, result['training_data'][0]['data']['num_feature'])
-
-    query = {'version' => 1, 'field' =>
-      {
-        'num_feature' => {'all' => [{'range' => {'from' => -100, 'to' => 1000}}, {'range' => {'from' => 200, 'to' => 1000}}]}
-      }
-    }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal(500, result['training_data'][0]['data']['num_feature'])
-
-    query = {'version' => 1, 'field' =>
-      {
-        'num_feature' => {'all' => [{'range' => {'from' => -100_000, 'to' => 100_000}}], 'not' => [{'range' => {'from' => -1, 'to' => -1}}]}
-      }
-    }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_equal(2, result['training_data'].size)
   end
 
-  test 'any_query_with_field_pattern' do
-    add_training_data.call()
-
-    query = {'version' => 1, 'field' =>
+  test 'all_query_with_exact_range_pattern' do
+    query = {:version => 1, :field =>
       {
-        'string_feature' => {'any' => [{'pattern' => '.*'}]}
+        'num_feature' => {:all => [{:range => {:from => 100_000, :to => 100_000}}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
+    expect_equal(1, result['training_data'].size)
+    expect_equal(100_000, result['training_data'][0]['data']['num_feature'])
+  end
+
+  test 'any_query_with_field_pattern_single' do
+    query = {:version => 1, :field =>
+      {
+        'string_feature' => {:any => [{:pattern => '.*'}]}
+      }
+    }
+    result = model.list_training_data({:query => query})
     expect_equal(3, result['training_data'].size)
+  end
 
-    query = {'version' => 1, 'field' =>
+  test 'any_query_with_field_pattern_multi' do
+    query = {:version => 1, :field =>
       {
-        'string_feature' => {'any' => [{'pattern' => '^ro.*'}, {'pattern' => '^c.*'}]}
+        'string_feature' => {:any => [{:pattern => '^ro.*'}, {:pattern => '^c.*'}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
   end
 
-  test 'any_query_with_range_pattern' do
-    add_training_data.call()
-
-    query = {'version' => 1, 'field' =>
+  test 'any_query_with_range_pattern_single' do
+    query = {:version => 1, :field =>
       {
-        'num_feature' => {'any' => [{'range' => {'from' => -100_000, 'to' => 100_000}}]}
+        'num_feature' => {:any => [{:range => {:from => -100_000, :to => 100_000}}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(3, result['training_data'].size)
+  end
 
-    query = {'version' => 1, 'field' =>
+  test 'any_query_with_range_pattern_multi' do
+    query = {:version => 1, :field =>
       {
-        'num_feature' => {'any' => [{'range' => {'from' => -100, 'to' => 1000}}, {'range' => {'from' => 200, 'to' => 1000}}]}
+        'num_feature' => {:any => [{:range => {:from => -100, :to => 1000}}, {:range => {:from => 200, :to => 1000}}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
   end
 
-  test 'query_with_two_fields' do
-    add_training_data.call()
-
-    query = {'version' => 1, 'field' =>
+  test 'all_and_not_query_with_field_pattern' do
+    query = {:version => 1, :field =>
       {
-        'feature1' => {'all' => [{'pattern' => '.*'}]},
-        'feature2' => {'any' => [{'range' => {'from' => 500, 'to' => 1000}}]}
+        'string_feature' => {:all => [{:pattern => '.*'}], :not => [{:pattern => '^c.*'}]}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
+    expect_equal(2, result['training_data'].size)
+  end
+
+  test 'any_and_not_query_with_field_pattern' do
+    query = {:version => 1, :field =>
+      {
+        'num_feature' => {:all => [{:range => {:from => -100_000, :to => 100_000}}], :not => [{:range => {:from => -1, :to => -1}}]}
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(2, result['training_data'].size)
+  end
+
+  # TODO: all_and_any_query
+  # TODO: all_and_any_and_not_query
+
+  test 'all_and_any_query_with_two_fields' do
+    query = {:version => 1, :field =>
+      {
+        'feature1' => {:all => [{:pattern => '.*'}]},
+        'feature2' => {:any => [{:range => {:from => 500, :to => 1000}}]}
+      }
+    }
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('D', result['training_data'][0]['label'])
+  end
 
-    query = {'version' => 1, 'field' =>
+  test 'all_and_exist_query_with_two_fields' do
+    query = {:version => 1, :field =>
       {
-        'feature1' => {'all' => [{'pattern' => '.*'}]},
-        'feature2' => {'exist' => true}
+        'feature1' => {:all => [{:pattern => '.*'}]},
+        'feature2' => {:exist => true}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(3, result['training_data'].size)
+  end
 
-    query = {'version' => 1, 'field' =>
+  test 'any_and_exist_query_with_two_fields' do
+    query = {:version => 1, :field =>
       {
-        'feature1' => {'all' => [{'pattern' => '.*'}]},
-        'feature2' => {'exist' => false}
+        'feature1' => {:all => [{:pattern => '.*'}]},
+        'feature2' => {:exist => false}
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_equal(0, result['training_data'].size)
-
-    query = {'version' => 1, 'field' =>
-      {
-        'feature1' => {'all' => [{'pattern' => '^r.*'}, {'pattern' => '.*l$'}]},
-        'feature2' => {}
-      }
-    }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(0, result['training_data'].size)
   end
 
-  test 'query_with_label_and_field' do
-    add_training_data.call()
-
-    query = {'version' => 1, 
-      'field' => {
-        'feature2' => {'any' => [{'range' => {'from' => 0, 'to' => 100}}]}
-      },
-      'label' => {
-        'all' => [{'pattern' => '^C.*'}]
+  test 'all_and_empty_query_with_two_fields' do
+    query = {:version => 1, :field =>
+      {
+        'feature1' => {:all => [{:pattern => '^r.*'}, {:pattern => '.*l$'}]},
+        'feature2' => {} # TODO: This will be the query which returns all training data
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
+    expect_equal(0, result['training_data'].size)
+  end
+
+  # TODO: add more patterns
+
+  test 'query_with_label_and_field_1' do
+    query = {:version => 1, 
+      :field => {
+        'feature2' => {:any => [{:range => {:from => 0, :to => 100}}]}
+      },
+      :label => {
+        :all => [{:pattern => '^C.*'}]
+      }
+    }
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('C#', result['training_data'][0]['label'])
+  end
 
-    query = {'version' => 1,
-      'field' => {
-        'feature2' => {'any' => [{'range' => {'from' => -100, 'to' => 0}}]}
+  test 'query_with_label_and_field_2' do
+    query = {:version => 1,
+      :field => {
+        'feature2' => {:any => [{:range => {:from => -100, :to => 0}}]}
       },
-      'label' => {
-        'all' => [{'pattern' => '^C.*'}]
+      :label => {
+        :all => [{:pattern => '^C.*'}]
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('C++', result['training_data'][0]['label'])
+  end
 
-    query = {'version' => 1,
-      'field' => {
-        'feature2' => {'any' => [{'range' => {'from' => 0, 'to' => 10000}}]}
+  test 'query_with_label_and_field_3' do
+    query = {:version => 1,
+      :field => {
+        'feature2' => {:any => [{:range => {:from => 0, :to => 10000}}]}
       },
-      'label' => {
-        'all' => [{'pattern' => '.'}]
+      :label => {
+        :all => [{:pattern => '.'}]
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('D', result['training_data'][0]['label'])
   end
 
   test 'query_with_label_and_field', :params => [{'version' => 1}, {'version' => 1, 'label' => {}, 'field' => {}},
                                                  {'version' => 1, 'label' => {}}, {'version' => 1, 'field' => {}}] do
-    add_training_data.call()
-
-    result = JSON.parse(post.call(param.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
+    result = model.list_training_data({:query => param})
     expect_equal(9, result['training_data'].size)
     expect_equal(9, result['total'])
   end
 
-  test 'asterisk_query' do
-    # TODO: use more data
-
-    query = {'version' => 1,
+  test 'asterisk_query_with_field_pattern' do
+    query = {:version => 1,
       '*' => {
-         'all' => [{'range' => {'from' => -10, 'to' => 10}}]
+         :any => [{:pattern => 'god'}]
       }
     }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_false(result.has_key?('errors'));
-
-    query = {'version' => 1,
-      '*' => {
-         'any' => [{'pattern' => 'god'}]
-      }
-    }
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
-    expect_false(result.has_key?('errors'));
+    model.list_training_data({:query => query}) # no exception
   end
-=end
+
+  test 'asterisk_query_with_range_pattern' do
+    query = {:version => 1,
+      '*' => {
+         :all => [{:range => {:from => -10, :to => 10}}]
+      }
+    }
+    model.list_training_data({:query => query}) # no exception
+  end
+
+  # TODO: add a lot more invalid quries
 end
