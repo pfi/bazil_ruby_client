@@ -49,7 +49,7 @@ TestCase 'Bazil-server model' do
 
   test 'update_classifier_config' do
     result = app.create_model(model_name, model_config)
-    config = result.config
+    config = result.config['config']
     config_cc = config['classifier_config']
     assert_equal('nherd', config_cc['method'])
     assert_equal('0.2', config_cc['regularization_weight'].to_s[0..2])
@@ -62,7 +62,7 @@ TestCase 'Bazil-server model' do
     }
 
     result.update_config(classifier_config)
-    config = result.config
+    config = result.config['config']
     config_cc = config['classifier_config']
     assert_equal('arow', config_cc['method'])
     assert_equal('0.4', config_cc['regularization_weight'].to_s[0..2])
