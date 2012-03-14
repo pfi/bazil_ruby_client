@@ -197,4 +197,120 @@ TestCase 'Bazil-server training-data-query-field-sort' do
   end
 end
 
-# TODO: add test to check combination of sorting operations and page/pagesize.
+SharedContext 'training_data_complex_sort_query_test_util' do
+  def prepare_training_data
+    set :float_key, 'float'
+    set :int_key, 'int'
+    set :str_key, 'str'
+
+    [-0.5, 1.0, 0.0, -10.5, 1.0, 1.5].zip([100, 0, -1000, 100, 50, 100], ['a', 'led', 'z', 'z', 'red', 'b']) { |f, n, s|
+      training_data = {float_key => f, 'int' => n, 'str' => s}
+      result = model.train('sort', training_data)
+    }
+
+    set :training_data_size, get_training_data_size
+  end
+
+  def sort_checker(sort_conditions)
+    query = {:version => 1, :field => {'str' => {:any => [{:pattern => '.*'}]}}, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['data'] }
+    result.each_cons(2) { |a, b|
+      num = 1
+      check = sort_conditions.any? { |sort_condition|
+        key = sort_condition['key']
+        cond = sort_condition['asc'] ? :< : :>
+        if a[key].__send__(cond, b[key])
+          true
+        elsif a[key] == b[key]
+          if num == sort_conditions.size
+            true
+          else
+            num += 1
+            false # goto next comparison
+          end
+        else
+          break false
+        end
+      }
+      expect_true(check)
+    }
+  end
+
+  def before_case_set
+    setup_environment
+
+    create_default_application
+    create_random_model
+    prepare_training_data
+  end
+
+  def after_case_set
+    delete_random_model
+    delete_default_application
+    cleanup_environment
+  end
+end
+
+TestCase 'Bazil-server training-data-query-complex-sort' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_complex_sort_query_test_util'
+
+  beforeCase do
+    before_case_set
+  end
+
+  afterCase do
+    after_case_set
+  end
+
+  test 'query_with_one_key_sort' do
+    [float_key, int_key, str_key].each { |key|
+      [true, false].each { |asc|
+        sort_checker([{'target' => 'field', 'key' => key, 'asc' => asc}])
+      }
+    }
+  end
+
+  test 'query_with_two_keys_sort' do
+    conds = [true, false].repeated_permutation(2).to_a
+    [float_key, int_key, str_key].permutation(2).each { |key1, key2|
+      conds.each { |asc1, asc2|
+        sort_checker([{'target' => 'field', 'key' => key1, 'asc' => asc1}, {'target' => 'field', 'key' => key2, 'asc' => asc2}])
+      }
+    }
+  end
+
+  test 'query_with_three_keys_sort' do
+    conds = [true, false].repeated_permutation(3).to_a
+    [float_key, int_key, str_key].permutation(3).each { |key1, key2, key3|
+      conds.each { |asc1, asc2, asc3|
+        sort_checker([{'target' => 'field', 'key' => key1, 'asc' => asc1}, {'target' => 'field', 'key' => key2, 'asc' => asc2}, {'target' => 'field', 'key' => key3, 'asc' => asc3}])
+      }
+    }
+  end
+
+  test 'label_and_id_asc_sort' do
+    sort_conditions = [{:target => 'label', 'asc' => true}, {:target => 'id', :asc => true}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['id'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a < b)
+    }
+  end
+
+  test 'label_and_id_desc_sort' do
+    sort_conditions = [{:target => 'label', :asc => true}, {:target => 'id', :asc => false}]
+    query = {'version' => 1, 'sort' => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['id'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a > b)
+    }
+  end
+
+  # TODO: add test to check combination of sorting operations and page/pagesize.
+  # TODO: add test for label and field
+  # TODO: add test for id and field
+  # TODO: add test for label and id and field
+end
+
