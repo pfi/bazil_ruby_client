@@ -78,4 +78,52 @@ TestCase 'Bazil-server training-data-query-id-sort' do
   end
 end
 
+TestCase 'Bazil-server training-data-query-label-sort' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_sort_query_test_util'
+
+  beforeCase do
+    before_case_set
+  end
+
+  afterCase do
+    after_case_set
+  end
+
+  test 'asc' do
+    sort_conditions = [{:target => 'label', :asc => true}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['label'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a < b)
+    }
+  end
+
+  test 'asc_with_page_size' do
+    sort_conditions = [{:target => 'label', :asc => true}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query, :page => 3, :page_size => 1})['training_data'].map { |e| e['label'] }
+    assert_equal(1, result.size)
+    expect_equal('D', result[0])
+  end
+
+  test 'desc' do
+    sort_conditions = [{:target => 'label', :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['label'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a > b)
+    }
+  end
+
+  test 'asc_with_page_size' do
+    sort_conditions = [{:target => 'label', :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query, :page => 3, :page_size => 1})['training_data'].map { |e| e['label'] }
+    assert_equal(1, result.size)
+    expect_equal('C#', result[0])
+  end
+end
+
 # TODO: add test to check combination of sorting operations and page/pagesize.

@@ -81,56 +81,6 @@ end
 =begin
 $num_training_data = 0;
 
-TestCase 'Bazil-server training-data-query-label-sort' do
-  beforeCase &setup_environment
-  before &test_app_creation
-  before &random_model_creation
-
-  after &random_model_deletion
-  after &test_app_deletion
-  afterCase &cleanup_environment
-
-  before do
-    set :add_training_data, Proc.new {
-      i = 1
-
-      # data with label
-      [['D', ['god', 10]], ['C++', ['owkn', -1]], ['C#', ['normal', 1000]]].each { |label, value|
-        training_data = {'f1' => value[0], 'f2' => value[1]}
-        result = JSON.parse(post.call({'label' => label, 'data' => training_data}.to_json, "/apps/#{app_name}/models/#{model_name}/training_data").body)
-        assert_equal(i, result['id'])
-        i += 1
-      }
-
-      $num_training_data += i - 1
-
-      i - 1
-    }
-  end
-
-  test 'asc' do
-    add_training_data.call()
-
-    sort_conditions = [{'target' => 'label', 'asc' => true}]
-    query = {'version' => 1, 'sort' => sort_conditions}
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)['training_data'].map { |e| e['label'] }
-    result.each_cons(2) { |a, b|
-      expect_true(a < b)
-    }
-  end
-
-  test 'desc' do
-    add_training_data.call()
-
-    sort_conditions = [{'target' => 'label', 'asc' => false}]
-    query = {'version' => 1, 'sort' => sort_conditions}
-    result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)['training_data'].map { |e| e['label'] }
-    result.each_cons(2) { |a, b|
-      expect_true(a > b)
-    }
-  end
-end
-
 TestCase 'Bazil-server training-data-query-field-sort' do
   beforeCase &setup_environment
   before &test_app_creation
