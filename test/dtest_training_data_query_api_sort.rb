@@ -126,4 +126,75 @@ TestCase 'Bazil-server training-data-query-label-sort' do
   end
 end
 
+TestCase 'Bazil-server training-data-query-field-sort' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_sort_query_test_util'
+
+  beforeCase do
+    before_case_set
+  end
+
+  afterCase do
+    after_case_set
+  end
+
+  test 'asc', :params => ['f1', 'f2'] do
+    sort_conditions = [{:target => 'field', :key => param, :asc => true}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['data'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a[param] < b[param])
+    }
+  end
+
+  test 'asc_with_page_size', :params => [['f1', 'owkn'], ['f2', 1000]] do
+    sort_conditions = [{:target => 'field', :key => param[0], :asc => true}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query, :page => 3, :page_size => 1})['training_data'].map { |e| e['data'] }
+    assert_equal(1, result.size)
+    expect_equal(param[1], result[0][param[0]])
+  end
+
+  test 'desc', :params => ['f1', 'f2'] do
+    sort_conditions = [{:target => 'field', :key => param, :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query})['training_data'].map { |e| e['data'] }
+    result.each_cons(2) { |a, b|
+      expect_true(a[param] > b[param])
+    }
+  end
+
+  test 'desc_with_page_size', :params => [['f1', 'god'], ['f2', -1]] do
+    sort_conditions = [{:target => 'field', :key => param[0], :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query, :page => 3, :page_size => 1})['training_data'].map { |e| e['data'] }
+    assert_equal(1, result.size)
+    expect_equal(param[1], result[0][param[0]])
+  end
+
+  test 'missing_key_field' do
+    sort_conditions = [{:target => 'field', :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    assert_error(RuntimeError) {
+      model.list_training_data({:query => query})
+    }
+  end
+
+  test 'unknown_field' do
+    sort_conditions = [{:target => 'field', :key => 'unknown', :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    model.list_training_data({:query => query})
+    # order is not defined.
+  end
+
+  test 'unknown_field_with_page_size', :params => [[1, 1, 1], [4, 1, 0], [1, 2, 2], [2, 2, 1]] do
+    sort_conditions = [{:target => 'field', :key => 'unknown', :asc => false}]
+    query = {:version => 1, :sort => sort_conditions}
+    result = model.list_training_data({:query => query, :page => param[0], :page_size => param[1]})['training_data']
+    assert_equal(param[2], result.size)
+    # order is not defined.
+  end
+end
+
 # TODO: add test to check combination of sorting operations and page/pagesize.
