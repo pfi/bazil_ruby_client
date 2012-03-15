@@ -31,7 +31,6 @@ module Bazil
       true
     end
 
-    # TODO: retrain
     # TODO: label APIs
 
     def train(label, data)
@@ -41,8 +40,8 @@ module Bazil
     end
 
     def retrain(option = {})
-      post('retrain', option.to_json, "Failed to retrain the model")
-      true
+      body = post('retrain', option.to_json, "Failed to retrain the model")
+      JSON.parse(body)
     end
 
     def labels

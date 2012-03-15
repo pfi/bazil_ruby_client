@@ -64,6 +64,15 @@ SharedContext 'model_train_and_query_api' do
       }
     end
   end
+
+  def classify(classify_data)
+    collect_result = 0
+    classify_data.each { |random_data|
+      max_label, = model.query(random_data['data'])
+      collect_result +=1 if random_data['label'] == max_label
+    }
+    collect_result
+  end
 end
 
 TestCase 'Bazil-server train and query' do
@@ -90,11 +99,7 @@ TestCase 'Bazil-server train and query' do
       model.train(random_data['label'], random_data['data'])
     }
 
-    collect_result = 0
-    classify_data.each { |random_data|
-      max_label, = model.query(random_data['data'])
-      collect_result +=1 if random_data['label'] == max_label
-    }
+    collect_result = classify(classify_data)
     expect_true(collect_result > 95)
 
     result = model.labels
@@ -115,11 +120,7 @@ TestCase 'Bazil-server train and query' do
       model.train(random_data['label'], random_data['data'])
     }
 
-    collect_result = 0
-    classify_data.each { |random_data|
-      max_label, = model.query(random_data['data'])
-      collect_result +=1 if random_data['label'] == max_label
-    }
+    collect_result = classify(classify_data)
     expect_true(collect_result > 95)
 
     result = model.labels
@@ -137,5 +138,70 @@ TestCase 'Bazil-server train and query' do
     assert_error(RuntimeError) {
       result = model.train('invalid', {'k' => param})
     }
+  end
+end
+
+TestCase 'Bazil-server retrain' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'model_train_and_query_api'
+
+  beforeCase { setup_environment }
+  before {
+    create_default_application
+    create_random_model
+  }
+
+  after {
+    delete_random_model
+    delete_default_application
+  }
+  afterCase { cleanup_environment }
+
+  test 'random_distribution', :params => ['random', 'random3'] do
+    train_data, classify_data = gen_data(param)
+
+    train_data.each { |random_data|
+      result = model.train(random_data['label'], random_data['data'])
+    }
+
+    collect_result = classify(classify_data)
+    expect_true(collect_result > 95)
+
+    result = model.retrain()
+    expect_true(result.has_key?('elapsed_time'))
+    expect_true(train_data.size, result['total'])
+    retrain_result = classify(classify_data)
+    expect_equal(retrain_result, collect_result)
+
+    # once more
+    result = model.retrain()
+    assert_true(result.has_key?('elapsed_time'))
+    assert_true(train_data.size, result['total'])
+    retrain_result = classify(classify_data)
+    expect_equal(retrain_result, collect_result)
+  end
+
+  test 'random_distribution with range' do
+    train_data, classify_data = gen_data('random')
+
+    train_data.each { |random_data|
+      result = model.train(random_data['label'], random_data['data'])
+    }
+
+    collect_result = classify(classify_data)
+    expect_true(collect_result > 95)
+
+    result = model.retrain({:from => 100, :to =>  400})
+    assert_true(result.has_key?('elapsed_time'))
+    expect_true(300, result['total'])
+    retrain_result = classify(classify_data)
+    expect_true((collect_result - 5 < retrain_result and retrain_result < collect_result + 5))
+
+    result = model.retrain({:from => 700, :to =>  800})
+    assert_true(result.has_key?('elapsed_time'))
+    expect_true(100, result['total'])
+    retrain_result = classify(classify_data)
+    expect_true((collect_result - 5 < retrain_result and retrain_result < collect_result + 5))
   end
 end
