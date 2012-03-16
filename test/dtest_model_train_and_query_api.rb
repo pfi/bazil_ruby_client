@@ -182,6 +182,29 @@ TestCase 'Bazil-server retrain' do
     expect_equal(retrain_result, collect_result)
   end
 
+  test 'random_distribution_with_times', :params => ['random', 'random3'] do
+    train_data, classify_data = gen_data(param)
+
+    train_data.each { |random_data|
+      result = model.train(random_data['label'], random_data['data'])
+    }
+
+    collect_result = classify(classify_data)
+    expect_true(collect_result > 95)
+
+    result = model.retrain()
+    expect_true(result.has_key?('elapsed_time'))
+    expect_true(train_data.size, result['total'])
+    retrain_result = classify(classify_data)
+    expect_equal(retrain_result, collect_result)
+
+    result = model.retrain({:times => 5})
+    assert_true(result.has_key?('elapsed_time'))
+    assert_true(train_data.size * 5, result['total'])
+    retrain_result = classify(classify_data)
+    expect_equal(retrain_result, collect_result)
+  end
+
   test 'random_distribution with range' do
     train_data, classify_data = gen_data('random')
 
@@ -194,13 +217,13 @@ TestCase 'Bazil-server retrain' do
 
     result = model.retrain({:from => 100, :to =>  400})
     assert_true(result.has_key?('elapsed_time'))
-    expect_true(300, result['total'])
+    expect_equal(300, result['total'])
     retrain_result = classify(classify_data)
     expect_true((collect_result - 5 < retrain_result and retrain_result < collect_result + 5))
 
-    result = model.retrain({:from => 700, :to =>  800})
+    result = model.retrain({:from => 700, :to =>  800, :times => 2})
     assert_true(result.has_key?('elapsed_time'))
-    expect_true(100, result['total'])
+    expect_equal(100 * 2, result['total'])
     retrain_result = classify(classify_data)
     expect_true((collect_result - 5 < retrain_result and retrain_result < collect_result + 5))
   end
