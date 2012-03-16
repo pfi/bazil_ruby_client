@@ -142,7 +142,11 @@ SharedContext 'bazil_model_utils' do # require bazil_case_utils
     }
 
     # Remove previous training data
-    Mongo::Connection.new(*MONGODB_SERVERS.split(':')).db("bazil_#{app_name}").drop_collection(model_name)
+    c = Mongo::Connection.new(*MONGODB_SERVERS.split(':'))
+    c.db('bazil').drop_collection('models')
+    c.db('bazil').drop_collection('model_config')
+    c.db("bazil_#{app_name}").drop_collection(model_name)
+
     app.create_model(model_name, model_config)
     set :model, app.model(model_name)
   end
