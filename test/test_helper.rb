@@ -8,7 +8,7 @@ require 'mongo'
 fail "MONGODB_SERVERS is missing" unless ENV.has_key?("MONGODB_SERVERS")
 
 CONFIG_PATH = File.join(File.dirname(__FILE__), 'config.json')
-BIN_PATH = File.join(ENV['BAZIL_HOME'], 'bin', 'bazil_server')
+BIN_PATH = ENV.has_key?('BAZIL_DEV_SERVER') ? ENV['BAZIL_DEV_SERVER'] : File.join(ENV['BAZIL_HOME'], 'bin', 'bazil_server')
 
 def get_bazil_pids()
   user = `whoami`.strip
