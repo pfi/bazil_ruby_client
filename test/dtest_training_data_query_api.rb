@@ -373,8 +373,8 @@ TestCase 'Bazil-server training-data-query field' do
   test 'all_and_empty_query_with_two_fields' do
     query = {:version => 1, :field =>
       {
-        'feature1' => {:all => [{:pattern => '^r.*'}, {:pattern => '.*l$'}]},
-        'feature2' => {} # TODO: This will be the query which returns all training data
+        'feature1' => {:all => [{:pattern => '^r.*'}, {:pattern => '.*l$'}]}, # hit 0
+        'feature2' => {} # hit all
       }
     }
     result = model.list_training_data({:query => query})
@@ -382,6 +382,28 @@ TestCase 'Bazil-server training-data-query field' do
   end
 
   # TODO: add more patterns
+
+  test 'query_with_empty_condition_1' do
+    query = {'version' => 1, 'field' =>
+      {
+        'feature1' => {'all' => [{'pattern' => '.*'}]},
+        'feature2' => {}
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(3, result['training_data'].size)
+  end
+
+  test 'query_with_empty_condition_2' do
+    query = {'version' => 1, 'field' =>
+      {
+        'feature2' => {},
+        'feature1' => {'all' => [{'pattern' => '.*'}]}
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(3, result['training_data'].size)
+  end
 
   test 'query_with_label_and_field_1' do
     query = {:version => 1, 
