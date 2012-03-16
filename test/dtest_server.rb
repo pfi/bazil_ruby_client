@@ -28,7 +28,7 @@ TestCase 'Bazil-server app' do
     result = client.config
     expect_true(result.has_key?('port'))
     expect_true(result.has_key?('num_threads'))
-    expect_true(result.has_key?('errors_size'))
+    expect_true(result.has_key?('error_history_size'))
     expect_true(result.has_key?('export_dir'))
     expect_true(result.has_key?('protocol'))
 
