@@ -9,7 +9,10 @@ require 'bazil'
 TestCase 'Bazil-server app' do
   include_context 'bazil_case_utils'
 
-  before { setup_environment }
+  before {
+    setup_environment
+    client.clear_errors
+  }
   after { cleanup_environment }
 
   test 'get_status' do
@@ -25,6 +28,7 @@ TestCase 'Bazil-server app' do
     result = client.config
     expect_true(result.has_key?('port'))
     expect_true(result.has_key?('num_threads'))
+    expect_true(result.has_key?('errors_size'))
     expect_true(result.has_key?('export_dir'))
     expect_true(result.has_key?('protocol'))
 
@@ -57,6 +61,29 @@ TestCase 'Bazil-server app' do
     assert_error(RuntimeError) { # TODO: message check
       client.create_application(app_name)
     }
+  end
+
+  test 'create_test_app_again_and_check_errors' do
+    client.create_application(app_name)
+    assert_error(RuntimeError) { # TODO: message check
+      client.create_application(app_name)
+    }
+
+    result = client.errors
+    expect_equal(1, result['num_errors'])
+    expect_true(result['errors'].size.nonzero?)
+  end
+
+  test 'clear_errors' do # This case is a little redundant because it is implicitly tested by before/after.
+    client.create_application(app_name)
+    assert_error(RuntimeError) { # TODO: message check
+      client.create_application(app_name)
+    }
+
+    client.clear_errors
+    result = client.errors
+    expect_equal(0, result['num_errors'])
+    expect_true(result['errors'].size.zero?)
   end
 
   test 'delete_test_app' do

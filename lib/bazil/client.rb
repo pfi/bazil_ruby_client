@@ -21,6 +21,18 @@ module Bazil
       JSON.parse(res.body)
     end
 
+    def errors
+      res = @http_cli.get(gen_uri('errors'))
+      raise "Failed to get information of errors from the server" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
+    def clear_errors
+      res = @http_cli.delete(gen_uri('errors'))
+      raise "Failed to clear error information of the server" unless res.code =~ /2[0-9][0-9]/
+      true
+    end
+
     def application_names
       res = @http_cli.get(gen_uri('apps'))
       # TODO: error check
@@ -41,7 +53,7 @@ module Bazil
     end
 
     def delete_all_applications
-      res, body = @http_cli.delete("/") # TODO: add version later
+      res, body = @http_cli.delete('/') # TODO: add version later
       raise "Failed to delete applications: #{res.body}" unless res.code =~ /2[0-9][0-9]/
       true
     end
