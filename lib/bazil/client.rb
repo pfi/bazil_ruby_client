@@ -53,7 +53,7 @@ module Bazil
     end
 
     def delete_all_applications
-      res, body = @http_cli.delete('/') # TODO: add version later
+      res, body = @http_cli.delete("/#{api_version}")
       raise "Failed to delete applications: #{res.body}" unless res.code =~ /2[0-9][0-9]/
       true
     end
