@@ -27,7 +27,7 @@ module Bazil
     end
 
     def update_config(conf)
-      res = send(:put, nil, conf.to_json, "Failed to updated config")
+      res = send(:put, 'config', conf.to_json, "Failed to updated config")
       true
     end
 

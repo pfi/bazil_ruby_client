@@ -61,7 +61,7 @@ TestCase 'Bazil-server model' do
       }
     }
 
-    result.update_config(classifier_config)
+    result.update_config({:config => classifier_config})
     config = result.config['config']
     config_cc = config['classifier_config']
     assert_equal('arow', config_cc['method'])
