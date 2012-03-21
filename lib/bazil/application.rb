@@ -14,6 +14,12 @@ module Bazil
       status
     end
 
+    def config
+      res = @http_cli.get(gen_uri('config'))
+      raise "Failed to get config of the application: application = #{@name}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
     def model_names
       res = @http_cli.get(gen_uri('models'))
       raise "Failed to get names of models: application = #{@name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information

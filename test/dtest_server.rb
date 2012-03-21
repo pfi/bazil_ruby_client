@@ -50,6 +50,17 @@ TestCase 'Bazil-server app' do
     assert_true(result)
   end
 
+  test 'create_test_app_with_description' do
+    result = client.create_application(app_name, {
+                                         :short_description => 'saitama',
+                                         :description => 'MAX P Coffee'
+                                       })
+    conf = result.config
+    expect_equal('saitama', conf['short_description'])
+    expect_equal('MAX P Coffee', conf['description'])
+    expect_true(conf.has_key?('created'));
+  end
+
   test 'get_apps' do
     result = client.create_application(app_name)
     expect_equal([app_name], client.application_names)
