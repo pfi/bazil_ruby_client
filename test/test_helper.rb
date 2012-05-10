@@ -2,7 +2,7 @@ $LOAD_PATH.unshift(File.dirname(__FILE__))
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '../lib'))
 
 require 'rubygems'
-require 'dtest'
+#require 'dtest'
 require 'mongo'
 
 fail "MONGODB_SERVERS is missing" unless ENV.has_key?("MONGODB_SERVERS")
@@ -57,6 +57,10 @@ EXPORT_DIR = File.join(ENV['BAZIL_HOME'], 'export')
 GlobalHarness do
   before do
     delete_files(File.join(EXPORT_DIR, "#{APP_NAME}-"))
+    host, port = MONGODB_SERVERS.split(':')
+    Mongo::Connection.new(host, port).drop_database("bazil")
+    Mongo::Connection.new(host, port).drop_database("bazil_#{APP_NAME}")
+
     BAZIL_PID = start_bazil(BAZIL_PORT)
   end
 
@@ -133,11 +137,20 @@ end
 SharedContext 'bazil_model_utils' do # require bazil_case_utils
   def create_random_model
     set :model_name, 'random'
+    set :model_config_id, 'saitama'
     set :model_config, {
-      'converter_config' => JSON.parse(File.read(CONFIG_PATH)),
-      'classifier_config' => {
+      'model_type' => 'multi_class',
+      'description' => 'application test',
+      'model_config' => {
+        'id' => model_config_id,
         'method' => 'nherd',
-        'regularization_weight' => 0.2
+        'description' => 'saitama configuration',
+        'config' => {
+          'converter_config' => JSON.parse(File.read(CONFIG_PATH)),
+          'classifier_config' => {
+            'regularization_weight' => 0.2
+          }
+        }
       }
     }
 
@@ -149,6 +162,7 @@ SharedContext 'bazil_model_utils' do # require bazil_case_utils
 
     app.create_model(model_name, model_config)
     set :model, app.model(model_name)
+    model.set_default_config_id(model_config_id)
   end
 
   def delete_random_model

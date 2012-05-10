@@ -12,11 +12,20 @@ TestCase 'Bazil-server model' do
   beforeCase { setup_environment }
   beforeCase do
     set :model_name, 'random'
+    set :model_config_id, 'saitama'
     set :model_config, {
-      'converter_config' => JSON.parse(File.read(CONFIG_PATH)),
-      'classifier_config' => {
+      'model_type' => 'multi_class',
+      'description' => 'application test',
+      'model_config' => {
+        'id' => model_config_id,
         'method' => 'nherd',
-        'regularization_weight' => 0.2
+        'description' => 'saitama configuration',
+        'config' => {
+          'converter_config' => JSON.parse(File.read(CONFIG_PATH)),
+          'classifier_config' => {
+            'regularization_weight' => 0.2
+          }
+        }
       }
     }
   end
@@ -47,24 +56,27 @@ TestCase 'Bazil-server model' do
     assert_equal([model_name], app.model_names)
   end
 
+  # TODO: separate test
   test 'update_classifier_config' do
     result = app.create_model(model_name, model_config)
-    config = result.config['config']
-    config_cc = config['classifier_config']
-    assert_equal('nherd', config_cc['method'])
+    config = result.config(model_config_id)
+    assert_equal('nherd', config['method'])
+    config_cc = config['config']['classifier_config']
     assert_equal('0.2', config_cc['regularization_weight'].to_s[0..2])
 
     classifier_config = {
-      'classifier_config' => {
-        'method' => 'arow',
-        'regularization_weight' => 0.4
+      'method' => 'arow',
+      'config' => {
+        'classifier_config' => {
+          'regularization_weight' => 0.4
+        }
       }
     }
 
-    result.update_config({:config => classifier_config})
-    config = result.config['config']
-    config_cc = config['classifier_config']
-    assert_equal('arow', config_cc['method'])
+    result.update_config(classifier_config, model_config_id)
+    config = result.config(model_config_id)
+    assert_equal('arow', config['method'])
+    config_cc = config['config']['classifier_config']
     assert_equal('0.4', config_cc['regularization_weight'].to_s[0..2])
   end
 

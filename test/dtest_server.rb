@@ -58,7 +58,7 @@ TestCase 'Bazil-server app' do
     conf = result.config
     expect_equal('saitama', conf['short_description'])
     expect_equal('MAX P Coffee', conf['description'])
-    expect_true(conf.has_key?('created'));
+    expect_true(conf.has_key?('created_at'));
   end
 
   test 'get_apps' do
