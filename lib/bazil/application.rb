@@ -26,28 +26,38 @@ module Bazil
       JSON.parse(res.body)['model_names']
     end
 
-    def create_model(model_name, config)
-      @@default_config = {
-        "converter_config" => {
-          "string_filter_types" => {},
-          "string_filter_rules" => [],
-          "num_filter_types" => {},
-          "num_filter_rules" => [],
-          "string_types" => {},
-          "string_rules" => [
-            {"key" => "*", "type" => "space", "sample_weight" => "bin", "global_weight" => "bin"}
-          ],
-          "num_types" => {},
-          "num_rules" => [
-            { "key" => "*",  "type" => "num" }
-          ],
+    def create_model(model_name, config = nil)
+      config ||= {
+        'model_type' => 'multi_class',
+        'description' => 'multi-class model',
+        'model_config' => {
+          'id' => 'first',
+          'method' => 'nherd',
+          'description' => 'first  configuration',
+          'config' => {
+            "converter_config" => {
+              "string_filter_types" => {},
+              "string_filter_rules" => [],
+              "num_filter_types" => {},
+              "num_filter_rules" => [],
+              "string_types" => {},
+              "string_rules" => [
+                {"key" => "*", "type" => "space", "sample_weight" => "bin", "global_weight" => "bin"}
+              ],
+              "num_types" => {},
+              "num_rules" => [
+                { "key" => "*",  "type" => "num" }
+              ],
+            },
+            'classifier_config' => {
+              'regularization_weight' => 0.2
+            }
+          }
         }
       }
 
-      config ||= {}
-      config = @@default_config.merge(config) # TODO: implement recursive merge if necessary
-
-      data = %({"model_name": "#{model_name}", "config": #{config.to_json}})
+      config['model_name'] = model_name
+      data = config.to_json
       res = @http_cli.post(gen_uri("models"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "Failed to create a model: application = #{@name}, model = #{model_name}" unless res.code =~ /2[0-9][0-9]/
       Model.new(@client, self, model_name)

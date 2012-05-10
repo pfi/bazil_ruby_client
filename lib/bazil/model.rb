@@ -11,41 +11,58 @@ module Bazil
       @application = app
       @name = name
 
-      status
+      # Model#initialize does not have config_id
+      # status
     end
 
-    def status
-      res = @http_cli.get(gen_uri('status'))
+    def set_default_config_id(id)
+      @default_config_id = id
+    end
+
+    def get_default_config_id
+      raise 'default_config_id is not set' if @default_config_id.nil?
+      @default_config_id
+    end
+
+    def status(config_id = get_default_config_id)
+      res = @http_cli.get(gen_uri("status/#{config_id}"))
       raise "Failed to get status of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
-    def config
-      res = @http_cli.get(gen_uri('config'))
+    def config(config_id = get_default_config_id)
+      res = @http_cli.get(gen_uri("config/#{config_id}"))
       raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
-    def update_config(conf)
-      res = send(:put, 'config', conf.to_json, "Failed to updated config")
+    def config_ids
+      res = @http_cli.get(gen_uri('config'))
+      raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)['config_ids']
+    end
+
+    def update_config(conf, config_id = get_default_config_id)
+      res = send(:put, "config/#{config_id}", conf.to_json, "Failed to updated config")
       true
     end
 
     # TODO: label APIs
 
-    def train(label, data)
-      data = %({"label": "#{label}", "data": #{data.to_json}})
+    def train(label, data, config_id = get_default_config_id)
+      data = %({"label": "#{label}", "data": #{data.to_json}, "config_id": "#{config_id}"})
       body = post('training_data', data, "Failed to post training data")
       JSON.parse(body)
     end
 
-    def retrain(option = {})
+    def retrain(option = {}, config_id = get_default_config_id)
+      option['config_id'] = config_id
       body = post('retrain', option.to_json, "Failed to retrain the model")
       JSON.parse(body)
     end
 
-    def labels
-      res = @http_cli.get(gen_uri('labels'))
+    def labels(config_id = get_default_config_id)
+      res = @http_cli.get(gen_uri("labels/#{config_id}"))
       raise "Failed to get labels the model has: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['labels']
     end
@@ -74,17 +91,18 @@ module Bazil
       true
     end
 
-    def put_training_data(data)
-      data = %({"data": #{data.to_json}})
+    def put_training_data(data, config_id = get_default_config_id)
+      data = %({"data": #{data.to_json}, "config_id": "#{config_id}"})
       body = post('training_data', data, "Failed to post training data")
       JSON.parse(body)
     end
 
-    def update_training_data(id, label, data)
+    def update_training_data(id, label, data, config_id = get_default_config_id)
       # TODO: type check of id
       new_data = {}
       new_data['label'] = label if label
       new_data['data'] = data if data
+      new_data['config_id'] = config_id
       new_data = new_data.to_json
       send(:put, "training_data/#{id}", new_data, "Failed to update training data")
       true
@@ -97,8 +115,8 @@ module Bazil
       true
     end
 
-    def query(data)
-      data = {'data' => data}.to_json
+    def query(data, config_id = get_default_config_id)
+      data = {'data' => data, 'config_id' => config_id}.to_json
       res = JSON.parse(post('query', data, "Failed to post data for query"))
       return res['max_label'], res
     end
