@@ -31,19 +31,19 @@ module Bazil
     end
 
     def config(config_id = get_default_config_id)
-      res = @http_cli.get(gen_uri("config/#{config_id}"))
+      res = @http_cli.get(gen_uri("configs/#{config_id}"))
       raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def config_ids
-      res = @http_cli.get(gen_uri('config'))
+      res = @http_cli.get(gen_uri('configs'))
       raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['config_ids']
     end
 
     def update_config(conf, config_id = get_default_config_id)
-      res = send(:put, "config/#{config_id}", conf.to_json, "Failed to updated config")
+      res = send(:put, "configs/#{config_id}", conf.to_json, "Failed to updated config")
       true
     end
 
