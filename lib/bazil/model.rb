@@ -25,7 +25,7 @@ module Bazil
     end
 
     def status(config_id = get_default_config_id)
-      res = @http_cli.get(gen_uri("status/#{config_id}"))
+      res = @http_cli.get(gen_uri(target_path(config_id, "status")))
       raise "Failed to get status of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
@@ -51,18 +51,17 @@ module Bazil
 
     def train(label, data, config_id = get_default_config_id)
       data = %({"label": "#{label}", "data": #{data.to_json}, "config_id": "#{config_id}"})
-      body = post('training_data', data, "Failed to post training data")
+      body = post("training_data", data, "Failed to post training data")
       JSON.parse(body)
     end
 
     def retrain(option = {}, config_id = get_default_config_id)
-      option['config_id'] = config_id
-      body = post('retrain', option.to_json, "Failed to retrain the model")
+      body = post(target_path(config_id, 'retrain'), option.to_json, "Failed to retrain the model")
       JSON.parse(body)
     end
 
     def labels(config_id = get_default_config_id)
-      res = @http_cli.get(gen_uri("labels/#{config_id}"))
+      res = @http_cli.get(gen_uri(target_path(config_id, "labels")))
       raise "Failed to get labels the model has: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['labels']
     end
@@ -116,12 +115,13 @@ module Bazil
     end
 
     def query(data, config_id = get_default_config_id)
-      data = {'data' => data, 'config_id' => config_id}.to_json
-      res = JSON.parse(post('query', data, "Failed to post data for query"))
+      data = {'data' => data}.to_json
+      res = JSON.parse(post(target_path(config_id, 'query'), data, "Failed to post data for query"))
       return res['max_label'], res
     end
 
     private
+
     def post(path, data, error_message)
       send(:post, path, data, error_message)
     end
@@ -130,6 +130,10 @@ module Bazil
       res = @http_cli.method(method).call(gen_uri(path), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "#{error_message}: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
       res.body
+    end
+
+    def target_path(id, path)
+      "configs/#{id}/#{path}"
     end
 
     def gen_uri(path = nil)
