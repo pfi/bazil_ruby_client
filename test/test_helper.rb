@@ -160,9 +160,8 @@ SharedContext 'bazil_model_utils' do # require bazil_case_utils
     c.db('bazil').drop_collection('model_config')
     c.db("bazil_#{app_name}").drop_collection(model_name)
 
-    app.create_model(model_name, model_config)
-    set :model, app.model(model_name)
-    model.set_default_config_id(model_config_id)
+    app.create_model(model_name, model_config_id, model_config)
+    set :model, app.model(model_name, model_config_id)
   end
 
   def delete_random_model

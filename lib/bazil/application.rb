@@ -26,12 +26,14 @@ module Bazil
       JSON.parse(res.body)['model_names']
     end
 
-    def create_model(model_name, config = nil)
+    def create_model(model_name, config_id, config = nil)
+      raise "model_name has an invalid value: #{model_id}" if model_name.nil? or !model_name.kind_of?(String)
+      raise "config_id has an invalid value: #{config_id}" if config_id.nil? or !config_id.kind_of?(String)
+
       config ||= {
         'model_type' => 'multi_class',
         'description' => 'multi-class model',
         'model_config' => {
-          'id' => 'first',
           'method' => 'nherd',
           'description' => 'first  configuration',
           'config' => {
@@ -56,11 +58,14 @@ module Bazil
         }
       }
 
+      raise "model_config is missing: #{config.inspect}" unless config['model_config']
+
       config['model_name'] = model_name
+      config['model_config']['id'] = config_id
       data = config.to_json
       res = @http_cli.post(gen_uri("models"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise "Failed to create a model: application = #{@name}, model = #{model_name}" unless res.code =~ /2[0-9][0-9]/
-      Model.new(@client, self, model_name)
+      Model.new(@client, self, model_name, config_id)
     end
 
     def delete_model(model_name)
@@ -69,8 +74,8 @@ module Bazil
       true # TODO: return better information
     end
 
-    def model(model_name)
-      Model.new(@client, self, model_name)
+    def model(model_name, default_config_id = nil)
+      Model.new(@client, self, model_name, default_config_id)
     end
 
     def status

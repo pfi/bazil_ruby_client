@@ -5,14 +5,17 @@ module Bazil
   class Model
     attr_reader :application, :name
 
-    def initialize(client, app, name)
+    def initialize(client, app, name, default_config_id = nil)
       @client = client
       @http_cli = client.http_client
       @application = app
       @name = name
 
       # Model#initialize does not have config_id
-      # status
+      if default_config_id
+        set_default_config_id(default_config_id)
+        status
+      end
     end
 
     def set_default_config_id(id)

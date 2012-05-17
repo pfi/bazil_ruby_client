@@ -17,7 +17,6 @@ TestCase 'Bazil-server model' do
       'model_type' => 'multi_class',
       'description' => 'application test',
       'model_config' => {
-        'id' => model_config_id,
         'method' => 'nherd',
         'description' => 'saitama configuration',
         'config' => {
@@ -40,25 +39,39 @@ TestCase 'Bazil-server model' do
   end
 
   test 'create_random_model' do
-    result = app.create_model(model_name, model_config)
+    result = app.create_model(model_name, model_config_id, model_config)
     # no exception
     assert_true(result)
   end
 
   test 'create_random_model_with_invalid_config' do
     assert_error(RuntimeError) { # TODO: check message
-      app.create_model(model_name, {}) # no classifier config
+      app.create_model(model_name, model_config_id, {}) # no classifier config
     }
   end
 
+  test 'create_random_model_missing_config_id' do
+    assert_error(RuntimeError) { # TODO: check message
+      app.create_model(model_name, nil, {}) # no classifier config
+    }
+  end
+
+  test 'create_random_model_invalid_config_id_type' do
+    assert_error(RuntimeError) { # TODO: check message
+      app.create_model(model_name, {:id => 'hoge'}, {}) # no classifier config
+    }
+  end
+
+  # TODO: add test for config id containing invalid letters
+
   test 'get_models' do
-    app.create_model(model_name, model_config)
+    app.create_model(model_name, model_config_id, model_config)
     assert_equal([model_name], app.model_names)
   end
 
   # TODO: separate test
   test 'update_classifier_config' do
-    result = app.create_model(model_name, model_config)
+    result = app.create_model(model_name, model_config_id, model_config)
     config = result.config(model_config_id)
     assert_equal('nherd', config['method'])
     config_cc = config['config']['classifier_config']
@@ -81,7 +94,7 @@ TestCase 'Bazil-server model' do
   end
 
   test 'update_with_invalid_config', :params => ['', '{', '1234', '"D"'] do
-    app.create_model(model_name, model_config)
+    app.create_model(model_name, model_config_id, model_config)
     Net::HTTP.start(host, port) { |http|
       result = JSON.parse(http.post("#{version}/apps/#{app_name}/models/#{model_name}", param, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => param.length.to_s}).body)
       expect_true(result.has_key?('errors'))
@@ -91,7 +104,7 @@ TestCase 'Bazil-server model' do
   # TODO: add update_converter_config
 
   test 'delete_random_model' do
-    app.create_model(model_name, model_config)
+    app.create_model(model_name, model_config_id, model_config)
     app.delete_model(model_name)
     expect_true(app.model_names.empty?)
   end
