@@ -172,3 +172,74 @@ SharedContext 'bazil_model_utils' do # require bazil_case_utils
     model.list_training_data({})['training_data'].size
   end
 end
+
+SharedContext 'model_train_and_query_api' do
+  def gen_data(algorithm)
+    sample = gen_random_distribution(algorithm)
+    train_data = sample[0...1000]
+    classify_data = sample[1000..-1]
+    [train_data, classify_data]
+  end
+
+  def rand_normal(mu, sigma)
+    alpha = rand
+    beta = rand
+    mu + Math.sqrt(-2 * Math.log(alpha)) * Math.sin(2 * Math::PI * beta) * sigma
+  end
+
+  def make_random(mus, sigma, dim)
+    [].tap { |a|
+      dim.times { |i|
+        a << rand_normal(mus[i % mus.size], sigma)
+      }
+    }
+  end
+
+  def gen_random_data
+    if rand(2) == 0
+      label = "OK"
+      mu = 1.0
+    else
+      label = "NG"
+      mu = -1.0
+    end
+    [label, make_random([mu], 1.0, 10)]
+  end
+
+  def naive_array_rotate(a, c)
+    c %= a.size
+    a[c..-1].to_a + a[0...c].to_a
+  end
+
+  def gen_random_data3
+    i = rand(3)
+    [["1", "2", "3"][i], make_random(naive_array_rotate([3, 0, -3], i), 1.0, 10)]
+  end
+
+  def gen_random_distribution(algorithm)
+    if algorithm == "random"
+      [].tap { |a|
+        1100.times {
+          label, data = gen_random_data
+          a << {'label' => label, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
+        }
+      }
+    else
+      [].tap { |a|
+        1100.times {
+          label, data = gen_random_data3
+          a << {'label' => label, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
+        }
+      }
+    end
+  end
+
+  def classify(classify_data)
+    collect_result = 0
+    classify_data.each { |random_data|
+      max_label, = model.query(random_data['data'])
+      collect_result +=1 if random_data['label'] == max_label
+    }
+    collect_result
+  end
+end

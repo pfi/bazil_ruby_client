@@ -63,6 +63,12 @@ module Bazil
       JSON.parse(body)
     end
 
+    def evaluate(method, config, config_id = get_default_config_id)
+      data = %({"method": "#{method}", "config": #{config.to_json}})
+      body = post(target_path(config_id, "evaluate"), data, "Failed to execute evaluate")
+      JSON.parse(body)
+    end
+
     def labels(config_id = get_default_config_id)
       res = @http_cli.get(gen_uri(target_path(config_id, "labels")))
       raise "Failed to get labels the model has: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
