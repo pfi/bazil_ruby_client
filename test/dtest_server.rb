@@ -85,6 +85,21 @@ TestCase 'Bazil-server app' do
     expect_true(result['errors'].size.nonzero?)
   end
 
+  test 'check_errors_order' do
+    client.create_application(app_name)
+    3.times {
+      sleep 1 # Waiting 1s because server time precision is 32bit.
+      assert_error(RuntimeError) { # TODO: message check
+        client.create_application(app_name)
+      }
+    }
+
+    result = client.errors
+    result['errors'].each_cons(2) { |a, b|
+      expect_true(a['time'] >= b['time'])
+    }
+  end
+
   test 'clear_errors' do # This case is a little redundant because it is implicitly tested by before/after.
     client.create_application(app_name)
     assert_error(RuntimeError) { # TODO: message check
