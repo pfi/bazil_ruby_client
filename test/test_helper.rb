@@ -23,6 +23,13 @@ def start_bazil(port)
   pid
 end
 
+def restart_bazil
+  Process.kill('SIGKILL', BAZIL_PID)
+  delete_files(File.join(EXPORT_DIR, "#{APP_NAME}-"))
+  sleep 1
+  $BAZIL_PID = start_bazil(BAZIL_PORT)
+end
+
 def unused_port
   require 'socket'
 
@@ -49,6 +56,7 @@ def delete_files(prefix)
   }
 end
 
+$BAZIL_PID = nil
 MONGODB_SERVERS = ENV["MONGODB_SERVERS"]
 BAZIL_PORT = unused_port
 APP_NAME = 'bazil_test'
@@ -61,7 +69,8 @@ GlobalHarness do
     Mongo::Connection.new(host, port).drop_database("bazil")
     Mongo::Connection.new(host, port).drop_database("bazil_#{APP_NAME}")
 
-    BAZIL_PID = start_bazil(BAZIL_PORT)
+    $BAZIL_PID = start_bazil(BAZIL_PORT)
+    BAZIL_PID = $BAZIL_PID
   end
 
   after do
