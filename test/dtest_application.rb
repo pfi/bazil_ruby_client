@@ -111,7 +111,7 @@ TestCase 'Bazil-server model' do
     # TODO: Delete MongoDB dependency
     c = Mongo::Connection.new(*MONGODB_SERVERS.split(':'))
     expect_true(c.db("bazil").collection('model_config').find({'model' => "#{app_name}.#{model_name}"}).to_a.empty?)
-    expect_true(c.db("bazil_#{app_name}").collection_names.empty?)
+    expect_false(c.database_names.index("bazil_#{app_name}"))
   end
 
   test 'delete_unknown_model' do
