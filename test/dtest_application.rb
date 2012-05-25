@@ -38,16 +38,27 @@ TestCase 'Bazil-server model' do
     expect_true(result.empty?)
   end
 
-  test 'create_random_model' do
-    result = app.create_model(model_name, model_config_id, model_config)
-    # no exception
-    assert_true(result)
+  test 'create_invalid_model_name', :params => ['', '.', 'a', '$', '9z'] do
+    assert_error(RuntimeError) { # TODO: check message
+      app.create_model(param, model_config_id, model_config)
+    }
   end
 
   test 'create_random_model_with_invalid_config' do
     assert_error(RuntimeError) { # TODO: check message
       app.create_model(model_name, model_config_id, {}) # no classifier config
     }
+  end
+
+  test 'create_random_model_with_missing_key_config' do
+    invalid_config = Marshal.load(Marshal.dump(model_config))
+    invalid_config['model_config'].delete('method')
+    assert_error(RuntimeError) { # TODO: check message
+      app.create_model(model_name, model_config_id, invalid_config) # no model_config.method key
+    }
+
+    c = Mongo::Connection.new(*MONGODB_SERVERS.split(':'))
+    expect_true(c.db("bazil").collection('models').find().to_a.empty?)
   end
 
   test 'create_random_model_missing_config_id' do
@@ -62,7 +73,17 @@ TestCase 'Bazil-server model' do
     }
   end
 
-  # TODO: add test for config id containing invalid letters
+  test 'create_random-model_with_invalid_config_id', :params => ['', '$', '.', ','] do
+    assert_error(RuntimeError) { # TODO: check message
+      app.create_model(model_name, param, model_config)
+    }    
+  end
+
+  test 'create_random_model' do
+    result = app.create_model(model_name, model_config_id, model_config)
+    # no exception
+    assert_true(result)
+  end
 
   test 'get_models' do
     app.create_model(model_name, model_config_id, model_config)
