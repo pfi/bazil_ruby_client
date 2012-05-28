@@ -50,6 +50,13 @@ module Bazil
       true
     end
 
+    def delete_config(id)
+      # TODO: type check of id
+      res = @http_cli.delete(gen_uri("configs/#{id}"))
+      raise "Failed to delete a configuration: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      true
+    end
+
     # TODO: label APIs
 
     def train(label, data, config_id = get_default_config_id)
