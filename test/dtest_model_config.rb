@@ -1,4 +1,92 @@
-# This test will be activated after the specification of Model's revision management is fixed.
+require 'rubygems'
+require 'json'
+
+require 'test_helper'
+require 'bazil'
+
+TestCase 'Bazil-server train and query' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'model_train_and_query_api'
+
+  beforeCase { setup_environment }
+  before {
+    create_default_application
+    create_random_model
+  }
+
+  after {
+    delete_random_model
+    delete_default_application
+  }
+  afterCase { cleanup_environment }
+
+  test 'get_configs_ids' do
+    result = model.config_ids
+    expect_equal(1, result.size)
+    expect_true(result.include?(model_config_id))
+  end
+
+  test 'get_unknown_config' do
+    assert_error(RuntimeError) { # TODO: check message
+      model.config('owkn')
+    }
+  end
+
+  test 'get_config' do
+    result = model.config(model_config_id)
+
+    expect_equal('nherd', result['method'])
+    expect_equal('saitama configuration', result['description'])
+    result_cc = result['config']['classifier_config']
+    expect_true((0.1..0.3).include?(result_cc['regularization_weight'])) # cannot check equality because to string changes float value
+  end
+
+  test 'delete_config' do
+    result = model.delete_config(model_config_id)
+    expect_true(result)
+    expect_true(model.config_ids.empty?)
+    assert_error(RuntimeError) { # TODO: check message
+      model.config(model_config_id)
+    }
+  end
+
+  test 'update_with_invalid_config', :params => ['', '{', '1234', '"D"', "{'config' => []}",
+                                                 "{'config' => {'classifier_config' => []}}"] do
+    assert_error(RuntimeError) { # TODO: check message
+      result = model.update_config(param, model_config_id)
+    }
+  end
+
+  test 'update_method_config' do
+    new_config = {
+      'method' => 'arow'
+    }
+
+    result = model.update_config(new_config, model_config_id)
+    expect_true(result)
+
+    result = model.config(model_config_id)
+    expect_equal('arow', result['method'])
+  end
+
+  test 'update_classifier_config' do
+    new_config = {
+      'config' => {
+        'classifier_config' => {
+          'regularization_weight' => 0.4
+        }
+      }
+    }
+
+    result = model.update_config(new_config, model_config_id)
+    expect_true(result)
+
+    result = model.config(model_config_id)
+    result_cc = result['config']['classifier_config']
+    expect_true((0.3..0.5).include?(result_cc['regularization_weight'])) # cannot check equality because to string changes float value
+  end
+end
 
 =begin
 TestCase 'Bazil-server config' do
@@ -10,28 +98,6 @@ TestCase 'Bazil-server config' do
   after &test_app_deletion
   afterCase &cleanup_environment
 
-  test 'get_config' do
-    result = JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/config"))
-    result_cc = result['config']['classifier_config']
-    assert_equal('nherd', result_cc['method'])
-    assert_equal('0.2', result_cc['regularization_weight'].to_s[0..2])
-    expected_id = Time.now.strftime("%Y%m%d%H")
-    expect_equal(expected_id, result['id'][0...expected_id.size])
-    expect_equal('', result['description'])
-  end
-
-  test 'get_config_using_invalid_id', :params => ['---', 'ho$ge', 'id.json'] do
-    assert_error(OpenURI::HTTPError) {
-      get.call("/apps/#{app_name}/models/#{model_name}/config/#{param}")
-    }
-  end
-
-  test 'get_config_using_id' do
-    id = JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/config"))['id']
-    result = JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/config/#{id}"))
-    expect_equal(id, result['id'])
-  end
-
   test 'post_config' do
     collection = Mongo::Connection.new(*MONGODB_SERVERS.split(':')).db('bazil').collection('model_config')
     expect_equal(1, collection.find({'model' => "#{app_name}.#{model_name}"}).to_a.size)
@@ -42,28 +108,6 @@ TestCase 'Bazil-server config' do
 
     expect_equal(2, collection.find({'model' => "#{app_name}.#{model_name}"}).to_a.size)
     expect_equal('saitama', JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/config/saitama"))['id'])
-  end
-
-  test 'update_classifier_config' do
-    classifier_config = {
-      'classifier_config' => {
-        'method' => 'arow',
-        'regularization_weight' => 0.4
-      }
-    }
-
-    result = JSON.parse(put.call(classifier_config.to_json, "/apps/#{app_name}/models/#{model_name}/config").body)
-    expect_true(result.has_key?('message'))
-
-    result = JSON.parse(get.call("/apps/#{app_name}/models/#{model_name}/config"))
-    result_cc = result['config']['classifier_config']
-    assert_equal('arow', result_cc['method'])
-    assert_equal('0.4', result_cc['regularization_weight'].to_s[0..2])
-  end
-
-  test 'update_with_invalid_config', :params => ['', '{', '1234', '"D"'] do
-    result = JSON.parse(put.call(param, "/apps/#{app_name}/models/#{model_name}/config").body)
-    expect_true(result.has_key?('errors'))
   end
 
   test 'replace_current_config' do
