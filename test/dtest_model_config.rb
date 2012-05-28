@@ -84,7 +84,38 @@ TestCase 'Bazil-server train and query' do
 
     result = model.config(model_config_id)
     result_cc = result['config']['classifier_config']
-    expect_true((0.3..0.5).include?(result_cc['regularization_weight'])) # cannot check equality because to string changes float value
+    expect_true((0.3..0.5).include?(result_cc['regularization_weight'])) # See 'get_config' test
+  end
+
+  test 'create_new_config' do
+    new_config = {
+      'id' => 'gunma',
+      'description' => 'gunma is flontier'
+    }
+
+    result = model.create_config(new_config, model_config_id)
+    expect_equal('gunma', result['id'])
+
+    result = model.config_ids
+    expect_equal(2, result.size)
+    expect_true(result.include?('gunma'))
+
+    result = model.config('gunma')
+    expect_equal('nherd', result['method'])
+    expect_equal('gunma is flontier', result['description'])
+    result_cc = result['config']['classifier_config']
+    expect_true((0.1..0.3).include?(result_cc['regularization_weight'])) # See 'get_config' test
+  end
+
+  test 'create_new_config_without_id' do
+    new_config = {
+      'description' => 'temporary'
+    }
+
+    result = model.create_config(new_config, model_config_id)
+    expected_id = Time.now.strftime("%Y%m%d%H")
+    expect_equal(expected_id, result['id'][0...expected_id.size])
+    expect_equal('temporary', result['description'])
   end
 end
 

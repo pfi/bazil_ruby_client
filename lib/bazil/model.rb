@@ -45,6 +45,13 @@ module Bazil
       JSON.parse(res.body)['config_ids']
     end
 
+    def create_config(new_config, base_config_id = get_default_config_id)
+      data = new_config.clone
+      data['config_id']= base_config_id
+      body = post('configs', data.to_json, "Failed to create new configuration")
+      JSON.parse(body)
+    end
+
     def update_config(conf, config_id = get_default_config_id)
       res = send(:put, "configs/#{config_id}", conf.to_json, "Failed to updated config")
       true
