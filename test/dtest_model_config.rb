@@ -88,12 +88,10 @@ TestCase 'Bazil-server train and query' do
   end
 
   test 'create_new_config' do
-    new_config = {
-      'id' => 'gunma',
-      'description' => 'gunma is flontier'
-    }
+    new_config = model_config['model_config'].clone
+    new_config['description'] = 'gunma is flontier'
 
-    result = model.create_config(new_config, model_config_id)
+    result = model.create_config('gunma', new_config)
     expect_equal('gunma', result['id'])
 
     result = model.config_ids
@@ -108,11 +106,10 @@ TestCase 'Bazil-server train and query' do
   end
 
   test 'create_new_config_without_id' do
-    new_config = {
-      'description' => 'temporary'
-    }
+    new_config = model_config['model_config'].clone
+    new_config['description'] = 'temporary'
 
-    result = model.create_config(new_config, model_config_id)
+    result = model.create_config(nil, new_config)
     expected_id = Time.now.strftime("%Y%m%d%H")
     expect_equal(expected_id, result['id'][0...expected_id.size])
     expect_equal('temporary', result['description'])
