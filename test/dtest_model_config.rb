@@ -114,6 +114,33 @@ TestCase 'Bazil-server train and query' do
     expect_equal(expected_id, result['id'][0...expected_id.size])
     expect_equal('temporary', result['description'])
   end
+
+  test 'clone_config' do
+    result = model.clone_config('owkn', {'description' => 'saitama?'}, model_config_id)
+    base = model.config(model_config_id)
+
+    expect_equal(2, model.config_ids.size)
+    expect_equal('owkn', result['id'])
+    expect_equal('saitama?', result['description'])
+    expect_equal(base['config'], result['config'])
+  end
+
+  test 'clone_config_without_id' do
+    result = model.clone_config(nil, {'method' => 'arow'}, model_config_id)
+    base = model.config(model_config_id)
+
+    assert_equal(2, model.config_ids.size)
+    expected_id = Time.now.strftime("%Y%m%d%H")
+    expect_equal(expected_id, result['id'][0...expected_id.size])
+    expect_equal('arow', result['method'])
+    assert_equal(base['config'], result['config'])
+  end
+
+  test 'clone_config_with_same_id' do
+    assert_error(RuntimeError) { # TODO: check message
+      model.clone_config(model_config_id, {'method' => 'arow'}, model_config_id)
+    }
+  end
 end
 
 =begin
