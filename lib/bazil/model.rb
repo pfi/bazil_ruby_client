@@ -76,6 +76,11 @@ module Bazil
       create_config(new_config_id, base_config.merge(options))
     end
 
+    def query_configs(query)
+      body = post('configs/query', query.to_json, "Failed to query model configurations")
+      JSON.parse(body)
+    end
+
     # TODO: label APIs
 
     def train(label, data, config_id = get_default_config_id)
