@@ -33,6 +33,12 @@ module Bazil
       JSON.parse(res.body)
     end
 
+    def model_config
+      res = @http_cli.get(gen_uri("config"))
+      raise "Failed to get model config: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
     def config(config_id = get_default_config_id)
       res = @http_cli.get(gen_uri("configs/#{config_id}"))
       raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/

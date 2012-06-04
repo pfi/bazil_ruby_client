@@ -85,6 +85,13 @@ TestCase 'Bazil-server model' do
     assert_true(result)
   end
 
+  test 'get_random_model_config' do
+    result = app.create_model(model_name, model_config_id, model_config).model_config
+    expect_true(app_name, result['application_name'])
+    expect_true(model_name, result['model_name'])
+    expect_true('multi_class', result['model_type'])
+  end
+
   test 'get_models' do
     app.create_model(model_name, model_config_id, model_config)
     assert_equal([model_name], app.model_names)
