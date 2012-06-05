@@ -61,11 +61,10 @@ module Bazil
       sep = <<EOS
 
 Available targets:
-  all            all configurations and training data
-  server         server configuration and training data
+  server         server configuration
   app            application configuration and training data
   model          model configuration and training data
-  training_data  training data
+  training_data  only training data
 
 Common options:
 EOS
@@ -77,7 +76,7 @@ EOS
       @parser.on('-m VAL', '--model', 'model name to export') { |v| @configs[MODEL_KEY] = v }
     end
 
-    AVAILABLE_TARGETS = ['all', 'server', 'app', 'model', 'training_data']
+    AVAILABLE_TARGETS = ['server', 'app', 'model', 'training_data']
 
     def scan_target(argv)
       raise "target is missing" if argv.empty?
