@@ -28,7 +28,12 @@ module Bazil
     end
 
     def method_missing(action, *args)
-      __send__(:[], action.to_s)
+      action_key = action.to_s
+      if action_key.end_with?('=')
+        __send__(:[]=, action_key.delete('='), *args)
+      else  
+        __send__(:[], action_key)
+      end
     end
 
     private
