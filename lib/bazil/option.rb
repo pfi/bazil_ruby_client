@@ -4,7 +4,8 @@ module Bazil
   class Option
     attr_reader :parser, :configs, :target
 
-    def initialize(default_configs = {})
+    def initialize(command, default_configs = {})
+      @command = command
       @configs = default_configs.dup
       @parser = OptionParser.new
 
@@ -13,6 +14,12 @@ module Bazil
     end
 
     def parse(argv)
+      if argv.include?('--help')
+        @parser.program_name = "bazil #{@command} target"
+        puts @parser.help
+        exit
+      end
+
       @target = scan_target(argv)
       @parser.parse(argv)
     end
@@ -51,11 +58,23 @@ module Bazil
     end
 
     def set_default_options
-      @parser.on('-h VAL', '--host') { |v| @configs[HOST_KEY] = v }
-      @parser.on('-p VAL', '--port') { |v| @configs[PORT_KEY] = Integer(v) }
-      @parser.on('-f VAL', '--format') { |v| @configs[FORMAT_KEY] = v }
-      @parser.on('-a VAL', '--app') { |v| @configs[APP_KEY] = v }
-      @parser.on('-m VAL', '--model') { |v| @configs[MODEL_KEY] = v }
+      sep = <<EOS
+
+Available targets:
+  all            all configurations and training data
+  server         server configuration and training data
+  app            application configuration and training data
+  model          model configuration and training data
+  training_data  training data
+
+Common options:
+EOS
+      @parser.separator sep
+      @parser.on('-h VAL', '--host', 'host of Bazil server') { |v| @configs[HOST_KEY] = v }
+      @parser.on('-p VAL', '--port', 'port of Bazil server') { |v| @configs[PORT_KEY] = Integer(v) }
+      # @parser.on('-f VAL', '--format', 'training data export format. Support formats are JSON and CSV(default is json)') { |v| @configs[FORMAT_KEY] = v }
+      @parser.on('-a VAL', '--app', 'application name to export') { |v| @configs[APP_KEY] = v }
+      @parser.on('-m VAL', '--model', 'model name to export') { |v| @configs[MODEL_KEY] = v }
     end
 
     AVAILABLE_TARGETS = ['all', 'server', 'app', 'model', 'training_data']
