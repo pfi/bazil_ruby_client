@@ -4,8 +4,8 @@ module Bazil
   class Option
     attr_reader :parser, :configs, :target
 
-    def initialize
-      @configs = {}
+    def initialize(default_configs = {})
+      @configs = default_configs.dup
       @parser = OptionParser.new
 
       set_default_configs
@@ -40,7 +40,6 @@ module Bazil
     MODEL_KEY = 'model'
 
     def set_default_configs
-      @configs = {}
       @configs[HOST_KEY] = 'localhost'
       @configs[PORT_KEY] = 8192
       @configs[FORMAT_KEY] = 'json'
