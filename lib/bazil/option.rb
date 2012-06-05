@@ -54,7 +54,7 @@ module Bazil
       @parser.on('-m VAL', '--model') { |v| @configs[MODEL_KEY] = v }
     end
 
-    AVAILABLE_TARGETS = ['server', 'app', 'model', 'training_data']
+    AVAILABLE_TARGETS = ['all', 'server', 'app', 'model', 'training_data']
 
     def scan_target(argv)
       raise "target is missing" if argv.empty?
