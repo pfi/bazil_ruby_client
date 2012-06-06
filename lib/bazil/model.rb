@@ -136,9 +136,23 @@ module Bazil
       true
     end
 
+    # TODO: Merge put_labeled_training_data
     def put_training_data(data, config_id = get_default_config_id)
-      data = %({"data": #{data.to_json}, "config_id": "#{config_id}"})
+      if config_id.nil?
+        data = %({"data": #{data.to_json}})
+      else
+        data = %({"data": #{data.to_json}, "config_id": "#{config_id}"})
+      end
       body = post('training_data', data, "Failed to post training data")
+      JSON.parse(body)
+    end
+
+    def put_labeled_training_data(label, data, config_id = get_default_config_id)
+      new_data = {}
+      new_data['label'] = label if label
+      new_data['data'] = data if data
+      new_data['config_id'] = config_id if config_id
+      body = post('training_data', new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
