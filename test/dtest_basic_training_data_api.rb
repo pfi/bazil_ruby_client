@@ -71,6 +71,15 @@ TestCase 'Bazil-server training-data' do
     assert_equal(0, get_training_data_size)
   end
 
+  test 'only_put' do
+    10.times {
+      result = model.put_training_data({'red' => 'bull'}, nil)
+      training_data_id = result['id']
+      assert_equal(1, get_training_data_size)
+    }
+    assert_equal(10, get_training_data_size)
+  end
+
   test 'update_invalid_id', :params => [0, 'gunma'] do
     assert_error(RuntimeError) { # TODO: check message
       model.update_training_data(param, nil, {'k' => 'v'})
