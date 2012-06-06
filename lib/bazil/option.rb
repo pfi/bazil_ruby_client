@@ -72,8 +72,8 @@ EOS
       @parser.on('-h VAL', '--host', 'host of Bazil server') { |v| @configs[HOST_KEY] = v }
       @parser.on('-p VAL', '--port', 'port of Bazil server') { |v| @configs[PORT_KEY] = Integer(v) }
       # @parser.on('-f VAL', '--format', 'training data export format. Support formats are JSON and CSV(default is json)') { |v| @configs[FORMAT_KEY] = v }
-      @parser.on('-a VAL', '--app', 'application name to export') { |v| @configs[APP_KEY] = v }
-      @parser.on('-m VAL', '--model', 'model name to export') { |v| @configs[MODEL_KEY] = v }
+      @parser.on('-a VAL', '--app', 'application name to process') { |v| @configs[APP_KEY] = v }
+      @parser.on('-m VAL', '--model', 'model name to process') { |v| @configs[MODEL_KEY] = v }
     end
 
     AVAILABLE_TARGETS = ['server', 'app', 'model', 'training_data']
