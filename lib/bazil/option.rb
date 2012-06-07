@@ -25,7 +25,6 @@ module Bazil
     end
 
     def has_option?(key)
-      p key
       @configs.has_key?(key)
     end
 
