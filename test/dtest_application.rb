@@ -97,6 +97,15 @@ TestCase 'Bazil-server model' do
     assert_equal([model_name], app.model_names)
   end
 
+  test 'update_model_config' do
+    model = app.create_model(model_name, model_config_id, model_config)
+    prev = model.model_config
+    model.update_model_config({'description' => 'ore ga saitama da!'})
+    now = model.model_config
+    expect_not_equal(prev['description'], now['description'])
+    expect_equal('ore ga saitama da!', now['description'])
+  end
+
   # TODO: separate test
   test 'update_classifier_config' do
     result = app.create_model(model_name, model_config_id, model_config)

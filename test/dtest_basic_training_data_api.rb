@@ -72,10 +72,10 @@ TestCase 'Bazil-server training-data' do
   end
 
   test 'only_put' do
-    10.times {
+    10.times { |i|
       result = model.put_training_data({'red' => 'bull'}, nil)
       training_data_id = result['id']
-      assert_equal(1, get_training_data_size)
+      assert_equal(i + 1, get_training_data_size)
     }
     assert_equal(10, get_training_data_size)
   end
