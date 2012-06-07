@@ -25,6 +25,7 @@ module Bazil
     end
 
     def has_option?(key)
+      p key
       @configs.has_key?(key)
     end
 
@@ -44,7 +45,7 @@ module Bazil
       when action_key.end_with?('=')
         __send__(:[]=, action_key.delete('='), *args)
       when action_key.end_with?('_given?')
-        __send__(:has_option?, action_key.delete('_given?'), *args)
+        __send__(:has_option?, action_key[0..action_key.length - '_given?'.length - 1], *args)
       else
         __send__(:[], action_key)
       end
