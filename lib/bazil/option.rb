@@ -24,21 +24,28 @@ module Bazil
       @parser.parse(argv)
     end
 
+    def has_option?(key)
+      @configs.has_key?(key)
+    end
+
     def []=(key, value)
       @configs[key.to_s] = value
     end
 
     def [](key)
-      raise "'#{key}' not found in option" unless @configs.has_key?(key)
+      raise "'#{key}' not found in options" unless has_option?(key)
 
       @configs[key]
     end
 
     def method_missing(action, *args)
       action_key = action.to_s
-      if action_key.end_with?('=')
+      case
+      when action_key.end_with?('=')
         __send__(:[]=, action_key.delete('='), *args)
-      else  
+      when action_key.end_with?('_given?')
+        __send__(:has_option?, action_key.delete('_given?'), *args)
+      else
         __send__(:[], action_key)
       end
     end
