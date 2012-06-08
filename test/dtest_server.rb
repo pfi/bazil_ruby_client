@@ -61,6 +61,19 @@ TestCase 'Bazil-server app' do
     expect_true(conf.has_key?('created_at'));
   end
 
+  test 'update_app_config' do
+    result = client.create_application(app_name, {
+                                         :short_description => 'saitama',
+                                         :description => 'MAX P Coffee'
+                                       })
+    prev_conf = result.config
+    result.update_config('description' => 'owkn', 'short_description' => 'C++')
+    conf = result.config
+    expect_equal('C++', conf['short_description'])
+    expect_equal('owkn', conf['description'])
+    expect_equal(prev_conf['created_at'], conf['created_at']);
+  end
+
   test 'get_apps' do
     result = client.create_application(app_name)
     expect_equal([app_name], client.application_names)

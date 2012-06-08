@@ -20,6 +20,13 @@ module Bazil
       JSON.parse(res.body)
     end
 
+    def update_config(conf)
+      data = conf.to_json
+      res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise "Failed to update a application configuration: application = #{@name}" unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
+    end
+
     def model_names
       res = @http_cli.get(gen_uri('models'))
       raise "Failed to get names of models: application = #{@name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
