@@ -68,7 +68,7 @@ module Bazil
       sep = <<EOS
 
 Available targets:
-  server         server configuration
+  server         server configuration #{@command == 'import' ? "(NOTE: Not supported yet)" : ''}
   app            application configuration and training data
   model          model configuration and training data
   training_data  only training data
