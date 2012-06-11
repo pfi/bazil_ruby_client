@@ -2,11 +2,12 @@ require 'rubygems'
 require 'json'
 require 'net/http'
 require 'bazil/application'
+require 'bazil/rest'
 
 module Bazil
   class Client
     def initialize(host, port)
-      @http_cli = Net::HTTP.new(host, port)
+      @http_cli = REST.new(host, port)
     end
 
     def status
