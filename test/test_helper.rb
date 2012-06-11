@@ -67,7 +67,7 @@ GlobalHarness do
     delete_files(File.join(EXPORT_DIR, "#{APP_NAME}-"))
     host, port = MONGODB_SERVERS.split(':')
     Mongo::Connection.new(host, port).drop_database("bazil")
-    Mongo::Connection.new(host, port).drop_database("bazil_#{APP_NAME}")
+    Mongo::Connection.new(host, port).drop_database("bazil-#{APP_NAME}")
 
     $BAZIL_PID = start_bazil(BAZIL_PORT)
     BAZIL_PID = $BAZIL_PID
@@ -79,7 +79,7 @@ GlobalHarness do
 
     host, port = MONGODB_SERVERS.split(':')
     Mongo::Connection.new(host, port).drop_database(APP_NAME)
-    Mongo::Connection.new(host, port).drop_database("bazil_#{APP_NAME}")
+    Mongo::Connection.new(host, port).drop_database("bazil-#{APP_NAME}")
   end
 end
 
@@ -167,7 +167,7 @@ SharedContext 'bazil_model_utils' do # require bazil_case_utils
     c = Mongo::Connection.new(*MONGODB_SERVERS.split(':'))
     c.db('bazil').drop_collection('models')
     c.db('bazil').drop_collection('model_config')
-    c.db("bazil_#{app_name}").drop_collection(model_name)
+    c.db("bazil-#{app_name}").drop_collection(model_name)
 
     app.create_model(model_name, model_config_id, model_config)
     set :model, app.model(model_name, model_config_id)
