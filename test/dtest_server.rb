@@ -39,6 +39,12 @@ TestCase 'Bazil-server app' do
     expect_true(config_server.has_key?('dbname'))
   end
 
+  test 'update_config' do
+    result = client.update_config({'error_history_size' => 512})
+    # TODO: Currently, PUT /v1/config pseudo API
+    #expect_equal(512, result['error_history_size']
+  end
+
   test 'get_empty_apps' do
     result = client.application_names
     expect_true(result.empty?)
