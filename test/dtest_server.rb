@@ -56,6 +56,12 @@ TestCase 'Bazil-server app' do
     assert_true(result)
   end
 
+  test 'create_app_with_invalid_name', :params => ['g', 'sa!tama', '12345', 'o' * 49] do
+    assert_error(RuntimeError) {
+      client.create_application(param)
+    }
+  end
+
   test 'create_test_app_with_description' do
     result = client.create_application(app_name, {
                                          :short_description => 'saitama',
