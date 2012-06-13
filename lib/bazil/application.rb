@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'json'
 require 'bazil/model'
+require 'bazil/error'
 
 module Bazil
   class Application
@@ -16,20 +17,20 @@ module Bazil
 
     def config
       res = @http_cli.get(gen_uri('config'))
-      raise "Failed to get config of the application: application = #{@name}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get config of the application: application = #{@name}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def update_config(conf)
       data = conf.to_json
       res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise "Failed to update a application configuration: application = #{@name}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to update a application configuration: application = #{@name}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def model_names
       res = @http_cli.get(gen_uri('models'))
-      raise "Failed to get names of models: application = #{@name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      raise_error("Failed to get names of models: application = #{@name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
       JSON.parse(res.body)['model_names']
     end
 
@@ -71,13 +72,13 @@ module Bazil
       config['model_config']['id'] = config_id
       data = config.to_json
       res = @http_cli.post(gen_uri("models"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise "Failed to create a model: application = #{@name}, model = #{model_name}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to create a model: application = #{@name}, model = #{model_name}", res) unless res.code =~ /2[0-9][0-9]/
       Model.new(@client, self, model_name, config_id)
     end
 
     def delete_model(model_name)
       res = @http_cli.delete(gen_uri("models/#{model_name}"))
-      raise "Failed to delete model: application = #{@name}, model = #{@model_name}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to delete model: application = #{@name}, model = #{model_name}", res) unless res.code =~ /2[0-9][0-9]/
       true # TODO: return better information
     end
 
@@ -87,18 +88,23 @@ module Bazil
 
     def status
       res = @http_cli.get(gen_uri('status'))
-      raise "Failed to get status of the application: #{@name}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get status of the application: #{@name}", res) unless res.code =~ /2[0-9][0-9]/
       # TODO: format result
       JSON.parse(res.body)
     end
 
     private
+
     def gen_uri(path = nil)
       if path
         "/#{@client.api_version}/apps/#{@name}/#{path}"
       else
         "/#{@client.api_version}/apps/#{@name}"
       end
+    end
+
+    def raise_error(message, res)
+      raise APIError.new(message, res.code, JSON.parse(res.body))
     end
   end # class Application
 end # module Bazil

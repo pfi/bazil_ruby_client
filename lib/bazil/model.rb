@@ -29,13 +29,13 @@ module Bazil
 
     def status(config_id = get_default_config_id)
       res = @http_cli.get(gen_uri(target_path(config_id, "status")))
-      raise "Failed to get status of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get status of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def model_config
       res = @http_cli.get(gen_uri("config"))
-      raise "Failed to get model config: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get model config: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
@@ -46,13 +46,13 @@ module Bazil
 
     def config(config_id = get_default_config_id)
       res = @http_cli.get(gen_uri("configs/#{config_id}"))
-      raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get config of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def config_ids
       res = @http_cli.get(gen_uri('configs'))
-      raise "Failed to get config of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get config of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['config_ids']
     end
 
@@ -77,7 +77,7 @@ module Bazil
     def delete_config(id)
       # TODO: type check of id
       res = @http_cli.delete(gen_uri("configs/#{id}"))
-      raise "Failed to delete a configuration: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to delete a configuration: id = #{id}, #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       true
     end
 
@@ -113,7 +113,7 @@ module Bazil
 
     def labels(config_id = get_default_config_id)
       res = @http_cli.get(gen_uri(target_path(config_id, "labels")))
-      raise "Failed to get labels the model has: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get labels the model has: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['labels']
     end
 
@@ -123,7 +123,7 @@ module Bazil
 
     def training_data(id)
       res = @http_cli.get(gen_uri("training_data/#{id}"))
-      raise "Failed to get training data of the model: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to get training data of the model: id = #{id}, #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
@@ -141,7 +141,7 @@ module Bazil
 
     def clear_training_data
       res = @http_cli.delete(gen_uri("training_data"))
-      raise "Failed to clear training_data of the model: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to clear training_data of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       true
     end
 
@@ -179,7 +179,7 @@ module Bazil
     def delete_training_data(id)
       # TODO: type check of id
       res = @http_cli.delete(gen_uri("training_data/#{id}"))
-      raise "Failed to delete a training data: id = #{id}, #{error_suffix}" unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to delete a training data: id = #{id}, #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       true
     end
 
@@ -197,7 +197,7 @@ module Bazil
 
     def send(method, path, data, error_message)
       res = @http_cli.method(method).call(gen_uri(path), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise "#{error_message}: #{error_suffix}" unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
+      raise_error("#{error_message}: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: enhance error information
       res.body
     end
 
@@ -215,6 +215,10 @@ module Bazil
 
     def error_suffix
       "application = #{@application.name}, model = #{@name}"
+    end
+
+    def raise_error(message, res)
+      raise APIError.new(message, res.code, JSON.parse(res.body))
     end
   end # module Model
 end # module Bazil
