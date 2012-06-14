@@ -1,3 +1,5 @@
+require 'forwardable'
+
 require 'rubygems'
 require 'json'
 require 'net/http'
@@ -7,9 +9,13 @@ require 'bazil/error'
 
 module Bazil
   class Client
+    extend Forwardable
+
     def initialize(host, port)
       @http_cli = REST.new(host, port)
     end
+
+    def_delegators :@http_cli, :read_timeout, :read_timeout=
 
     def status
       res = @http_cli.get(gen_uri('status'))

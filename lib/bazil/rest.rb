@@ -1,12 +1,19 @@
+require 'forwardable'
+
 require 'rubygems'
 require 'json'
 require 'net/http'
 
 module Bazil
   class REST
-    def initialize(host, port)
+    extend Forwardable
+
+    def initialize(host, port, opt = {})
       @http = Net::HTTP.new(host, port)
+      read_timeout = opt[:read_timeout] if opt.has_key?(:read_timeout)
     end
+
+    def_delegators :@http, :read_timeout, :read_timeout=
 
     def get(uri)
       @http.get(uri)
