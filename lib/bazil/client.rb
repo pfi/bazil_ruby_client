@@ -57,7 +57,6 @@ module Bazil
     def create_application(name, config = {})
       data = {:application_name => name, :config => config}.to_json
       res, body = @http_cli.post(gen_uri('apps'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      #raise_error("Failed to create application: #{name}" unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
       raise_error("Failed to create application: #{name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
       Application.new(self, name)
     end

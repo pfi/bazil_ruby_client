@@ -42,7 +42,7 @@ module Bazil
     private
 
     def raise_error(method)
-      raise "Failed to connect to the server at #{method} method: server = #{@http.address}:#{@http.port}"
+      raise ConnectionError.new(method, @http.address, @http.port)
     end
   end # class Rest
 end # module Bazil
