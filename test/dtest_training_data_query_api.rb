@@ -84,7 +84,7 @@ TestCase 'Bazil-server training-data-query label' do
       }
     }
 
-    assert_error(RuntimeError) { # TODO: make this Bazil::ListTrainingDataError
+    assert_error(Bazil::APIError) { # TODO: make this Bazil::ListTrainingDataError
       model.list_training_data({:query => query})
     }
   end

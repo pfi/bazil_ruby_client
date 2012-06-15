@@ -176,7 +176,7 @@ TestCase 'Bazil-server training-data-query-field-sort' do
   test 'missing_key_field' do
     sort_conditions = [{:target => 'field', :asc => false}]
     query = {:version => 1, :sort => sort_conditions}
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       model.list_training_data({:query => query})
     }
   end

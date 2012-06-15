@@ -57,7 +57,7 @@ TestCase 'Bazil-server app' do
   end
 
   test 'create_app_with_invalid_name', :params => ['g', 'sa!tama', '12345', 'o' * 49] do
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       client.create_application(param)
     }
   end
@@ -94,14 +94,14 @@ TestCase 'Bazil-server app' do
 
   test 'create_test_app_again' do
     client.create_application(app_name)
-    assert_error(RuntimeError) { # TODO: message check
+    assert_error(Bazil::APIError) { # TODO: message check
       client.create_application(app_name)
     }
   end
 
   test 'create_test_app_again_and_check_errors' do
     client.create_application(app_name)
-    assert_error(RuntimeError) { # TODO: message check
+    assert_error(Bazil::APIError) { # TODO: message check
       client.create_application(app_name)
     }
 
@@ -114,7 +114,7 @@ TestCase 'Bazil-server app' do
     client.create_application(app_name)
     3.times {
       sleep 1 # Waiting 1s because server time precision is 32bit.
-      assert_error(RuntimeError) { # TODO: message check
+      assert_error(Bazil::APIError) { # TODO: message check
         client.create_application(app_name)
       }
     }
@@ -127,7 +127,7 @@ TestCase 'Bazil-server app' do
 
   test 'clear_errors' do # This case is a little redundant because it is implicitly tested by before/after.
     client.create_application(app_name)
-    assert_error(RuntimeError) { # TODO: message check
+    assert_error(Bazil::APIError) { # TODO: message check
       client.create_application(app_name)
     }
 
@@ -150,7 +150,7 @@ TestCase 'Bazil-server app' do
   end
 
   test 'delete_unknown_app' do
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       client.delete_application('unknown')
     }
   end

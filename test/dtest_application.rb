@@ -39,13 +39,13 @@ TestCase 'Bazil-server model' do
   end
 
   test 'create_invalid_model_name', :params => ['', '.', 'a', '$', '9z'] do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       app.create_model(param, model_config_id, model_config)
     }
   end
 
   test 'create_random_model_with_invalid_config' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(RuntimeError) { # TODO: Change Error class and check message
       app.create_model(model_name, model_config_id, {}) # no classifier config
     }
   end
@@ -53,7 +53,7 @@ TestCase 'Bazil-server model' do
   test 'create_random_model_with_missing_key_config' do
     invalid_config = Marshal.load(Marshal.dump(model_config))
     invalid_config['model_config'].delete('method')
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       app.create_model(model_name, model_config_id, invalid_config) # no model_config.method key
     }
 
@@ -62,19 +62,19 @@ TestCase 'Bazil-server model' do
   end
 
   test 'create_random_model_missing_config_id' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(RuntimeError) { # TODO: Change Error class and check message
       app.create_model(model_name, nil, {}) # no classifier config
     }
   end
 
   test 'create_random_model_invalid_config_id_type' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(RuntimeError) { # TODO: Change Error class and check message
       app.create_model(model_name, {:id => 'hoge'}, {}) # no classifier config
     }
   end
 
   test 'create_random-model_with_invalid_config_id', :params => ['', '$', '.', ','] do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       app.create_model(model_name, param, model_config)
     }    
   end
@@ -152,7 +152,7 @@ TestCase 'Bazil-server model' do
   end
 
   test 'delete_unknown_model' do
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       app.delete_model('unknown')
     }
   end

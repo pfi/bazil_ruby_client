@@ -64,7 +64,7 @@ TestCase 'Bazil-server train and query' do
   end
 
   test 'train_with_invalid_data', :params => [nil, true, [1, 2], {'key' => 'value'}] do
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       result = model.train('invalid', {'k' => param})
     }
   end

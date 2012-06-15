@@ -32,7 +32,7 @@ TestCase 'Bazil-server training-data' do
   end
 
   test 'put_invalid_training_data' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.put_training_data({'nested' => {'key' => 'value'}})
     }
     expect_equal(0, get_training_data_size)
@@ -41,7 +41,7 @@ TestCase 'Bazil-server training-data' do
   # TODO: add tests for directly POSTing invalid data which cannot be sent via Bazil::Model (e,g, missing 'config')
 
   test 'put_invalid_data', :params => [0, 'saitama', true, nil, [1]] do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.put_training_data(param)
     }
     expect_equal(0, get_training_data_size)
@@ -57,7 +57,7 @@ TestCase 'Bazil-server training-data' do
 =end
 
   test 'delete_invalid_id', :params => [0, 'saitama'] do
-    assert_error(RuntimeError) {
+    assert_error(Bazil::APIError) {
       model.delete_training_data(param)
     }
   end
@@ -81,7 +81,7 @@ TestCase 'Bazil-server training-data' do
   end
 
   test 'update_invalid_id', :params => [0, 'gunma'] do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.update_training_data(param, nil, {'k' => 'v'})
     }
   end

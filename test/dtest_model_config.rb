@@ -28,7 +28,7 @@ TestCase 'Bazil-server train and query' do
   end
 
   test 'get_unknown_config' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.config('owkn')
     }
   end
@@ -46,14 +46,14 @@ TestCase 'Bazil-server train and query' do
     result = model.delete_config(model_config_id)
     expect_true(result)
     expect_true(model.config_ids.empty?)
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.config(model_config_id)
     }
   end
 
   test 'update_with_invalid_config', :params => ['', '{', '1234', '"D"', "{'config' => []}",
                                                  "{'config' => {'classifier_config' => []}}"] do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       result = model.update_config(param, model_config_id)
     }
   end
@@ -137,7 +137,7 @@ TestCase 'Bazil-server train and query' do
   end
 
   test 'clone_config_with_same_id' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.clone_config(model_config_id, {'method' => 'arow'}, model_config_id)
     }
   end
@@ -169,7 +169,7 @@ TestCase 'Bazil-server config-query' do
   afterCase { cleanup_environment }
 
   test 'query_without_version' do
-    assert_error(RuntimeError) { # TODO: check message
+    assert_error(Bazil::APIError) { # TODO: check message
       model.query_configs({})
     }
   end
