@@ -21,8 +21,8 @@ module Bazil
       JSON.parse(res.body)
     end
 
-    def update_config(conf)
-      data = conf.to_json
+    def update_config(config)
+      data = config.to_json
       res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise_error("Failed to update a application configuration: application = #{@name}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
@@ -68,6 +68,8 @@ module Bazil
 
       raise "model_config is missing: #{config.inspect}" unless config['model_config']
 
+      config = config.dup
+      config['model_config'] = config['model_config'].dup
       config['model_name'] = model_name
       config['model_config']['id'] = config_id
       data = config.to_json

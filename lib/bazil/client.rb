@@ -29,8 +29,8 @@ module Bazil
       JSON.parse(res.body)
     end
 
-    def update_config(conf)
-      data = conf.to_json
+    def update_config(config)
+      data = config.to_json
       res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
       raise_error("Failed to update config of the server", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
@@ -55,6 +55,7 @@ module Bazil
     end
 
     def create_application(name, config = {})
+      config = config.dup
       config['application_name'] = name
       data = config.to_json
       res, body = @http_cli.post(gen_uri('apps'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
