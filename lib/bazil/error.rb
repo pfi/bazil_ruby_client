@@ -1,5 +1,8 @@
 module Bazil
   class BazilError < RuntimeError
+    def inspect
+      to_s
+    end
   end
 
   class ConnectionError < BazilError
@@ -11,7 +14,7 @@ module Bazil
       @port = port
     end
 
-    def inspect
+    def to_s
       "Failed to connect to the server at #{@method} method: server = #{@address}:#{@port}"
     end
   end
@@ -25,7 +28,7 @@ module Bazil
       @errors = response['errors']
     end
 
-    def inspect
+    def to_s
       result = [@message]
       result += @errors.map { |error| "\t#{error['file']}(#{error['line']}) = #{error['message']}" }
       result.join("\n")
