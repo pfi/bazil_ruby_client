@@ -31,6 +31,9 @@ TestCase 'Bazil-server app' do
     expect_true(result.has_key?('error_history_size'))
     expect_true(result.has_key?('export_dir'))
     expect_true(result.has_key?('protocol'))
+    expect_true(result.has_key?('log_dir'))
+    expect_true(result.has_key?('minloglevel'))
+    expect_true(result.has_key?('stderrthreshold'))
 
     expect_true(result.has_key?('config_server'))
     config_server = result['config_server']
