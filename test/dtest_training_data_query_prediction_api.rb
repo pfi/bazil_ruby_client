@@ -129,134 +129,31 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
     }
   end
 
-  test 'query_for_each_cell_of_confusion_matrix', :params => ['all', 'any'] do
-    # I want to use parameterized test with confusion_matrix variable...
-    confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, count| [count, {'annotation' => annotation, 'prediction' => prediction}] }
-    }.flatten(1).each { |test_set|
-      query = {'version' => 1,
-        'prediction' => {
-          'query' => {param => [{'label' => test_set[1]}]},
-          'config_id' => model_config_id
-        }
-      }
-
-      result = model.list_training_data({:query => query})
-      expect_equal(test_set[0], result['training_data'].size)
-    }
-  end
-
-  test 'query_with_all_patterns' do
-    confusion_matrix.each_pair { |annotation, classified|
-      query = {'version' => 1,
-        'prediction' => {
-          'query' => {'all' => classified.map { |prediction, count|
-              {'label' => {'annotation' => annotation, 'prediction' => prediction}}
-            }
-          },
-          'config_id' => model_config_id
-        }
-      }
-
-      result = model.list_training_data({:query => query})
-      expect_equal(0, result['training_data'].size)
-    }
-  end
-
-  test 'get_all_with_any_patterns' do
-    any_patterns = confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, count| {'label' => {'annotation' => annotation, 'prediction' => prediction}} }
-    }.flatten(1)
+  test 'any_or_any_patterns_with_each_annotation', :params => combine(['all', 'any'], ['C#', 'C++', 'D']) do
     query = {'version' => 1,
       'prediction' => {
-        'query' => {'any' => any_patterns},
+        'query' => {param[0] => [{'label' => {'pattern' => Regexp.escape(param[1])}}]},
         'config_id' => model_config_id
       }
     }
 
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last[param[1]] }
     result = model.list_training_data({:query => query})
-    expect_equal(training_data_size, result['training_data'].size)
+    expect_equal(annotated_training_data_num, result['training_data'].size)
   end
 
-  test 'query_with_any_patterns' do
-    confusion_matrix.each_pair { |annotation, classified|
-      num = 0
-      query = {'version' => 1,
-        'prediction' => {
-          'query' => {'any' => classified.map { |prediction, count|
-              num += count
-              {'label' => {'annotation' => annotation, 'prediction' => prediction}}
-            }
-          },
-          'config_id' => model_config_id
-        }
-      }
-
-      result = model.list_training_data({:query => query})
-      expect_equal(num, result['training_data'].size)
-    }
-  end
-
-  test 'any_query_with_page_size' do
+  test 'each_annotation_with_page_size', :params => ['C#', 'C++', 'D'] do
     query = {'version' => 1,
       'prediction' => {
-        'query' => {
-          'any' => [{'label' => {'annotation' => 'C#', 'prediction' => 'D'}}]
-        },
+        'query' => {'any' => [{'label' => {'pattern' => Regexp.escape(param)}}]},
         'config_id' => model_config_id
       }
     }
 
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last[param] }
     result = model.list_training_data({:query => query, :page_size => 1})
     expect_equal(1, result['training_data'].size)
-    expect_equal(2, result['total'])
-  end
-
-  test 'query_with_any_and_not_patterns' do
-    confusion_matrix.each_pair { |annotation, classified|
-      num = 0
-      any_patterns = classified.map { |prediction, count|
-        num += count
-        {'label' => {'annotation' => annotation, 'prediction' => prediction}}
-      }
-      classified.each_pair { |prediction, count|
-        query = {'version' => 1,
-          'prediction' => {
-            'query' => {
-              'any' => any_patterns,
-              'not' => [{'label' => {'annotation' => annotation, 'prediction' => prediction}}]
-            },
-            'config_id' => model_config_id
-          }
-        }
-
-        result = model.list_training_data({:query => query})
-        expect_equal(num - count, result['training_data'].size)
-      }
-    }
-  end
-
-  test 'query_with_only_not_patterns' do
-    confusion_matrix.each_pair { |annotation, classified|
-      num = 0
-      any_patterns = classified.map { |prediction, count|
-        num += count
-        {'label' => {'annotation' => annotation, 'prediction' => prediction}}
-      }
-      classified.each_pair { |prediction, count|
-        query = {'version' => 1,
-          'prediction' => {
-            'query' => {
-              'not' => [{'label' => {'annotation' => annotation, 'prediction' => prediction}}]
-            },
-            'config_id' => model_config_id
-          }
-        }
-
-        result = model.list_training_data({:query => query})
-        expect_equal(0, result['training_data'].size) # not must be used with all or any
-      }
-    }
+    expect_equal(annotated_training_data_num, result['total'])
   end
 end
 
@@ -281,7 +178,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
 
   test 'any_patterns_with_each_annotation', :params => ['C#', 'C++', 'D'] do
     any_patterns = confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, _| {'label' => {'annotation' => annotation, 'prediction' => prediction}} }
+      classified.map { |prediction, _| {'label' => {'pattern' => Regexp.escape(prediction)}} }
     }.flatten(1)
     query = {'version' => 1,
       'label' => {
@@ -296,6 +193,122 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
     annotated_training_data_num = confusion_matrix[param].inject(0) { |sum, classified| sum + classified.last }
     result = model.list_training_data({:query => query})
     expect_equal(annotated_training_data_num, result['training_data'].size)
+  end
+
+  test 'query_for_each_cell_of_confusion_matrix', :params => ['all', 'any'] do
+    # I want to use parameterized test with confusion_matrix variable...
+    confusion_matrix.map { |annotation, classified|
+      classified.map { |prediction, count| [count, Regexp.escape(annotation), Regexp.escape(prediction)] }
+    }.flatten(1).each { |test_set|
+      query = {'version' => 1,
+        'label' => {'all' => [{'pattern' => test_set[1]}]},
+        'prediction' => {
+          'query' => {param => [{'label' => {'pattern' => test_set[2]}}]},
+          'config_id' => model_config_id
+        }
+      }
+
+      result = model.list_training_data({:query => query})
+      expect_equal(test_set[0], result['training_data'].size)
+    }
+  end
+
+  test 'query_with_all_patterns' do
+    confusion_matrix.each_pair { |annotation, classified|
+      query = {'version' => 1,
+        'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+        'prediction' => {
+          'query' => {'all' => classified.map { |prediction, count|
+              {'label' => {'pattern' => Regexp.escape(prediction)}}
+            }
+          },
+          'config_id' => model_config_id
+        }
+      }
+
+      result = model.list_training_data({:query => query})
+      expect_equal(0, result['training_data'].size)
+    }
+  end
+
+  test 'get_all_with_any_patterns' do
+    any_patterns = confusion_matrix.map { |annotation, classified|
+      classified.map { |prediction, count| {'annotation' => Regexp.escape(annotation), 'prediction' => Regexp.escape(prediction)} }
+    }.flatten(1)
+    query = {'version' => 1,
+      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+      'prediction' => {
+        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
+        'config_id' => model_config_id
+      }
+    }
+
+    result = model.list_training_data({:query => query})
+    expect_equal(training_data_size, result['training_data'].size)
+  end
+
+  test 'query_with_any_patterns' do
+    confusion_matrix.each_pair { |annotation, classified|
+      num = 0
+      query = {'version' => 1,
+        'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+        'prediction' => {
+          'query' => {'any' => classified.map { |prediction, count|
+              num += count
+              {'label' => {'pattern' => Regexp.escape(prediction)}}
+            }
+          },
+          'config_id' => model_config_id
+        }
+      }
+
+      result = model.list_training_data({:query => query})
+      expect_equal(num, result['training_data'].size)
+    }
+  end
+
+  test 'query_with_any_and_not_patterns' do
+    confusion_matrix.each_pair { |annotation, classified|
+      num = 0
+      any_patterns = classified.map { |prediction, count|
+        num += count
+        {'annotation' => Regexp.escape(annotation), 'prediction' => Regexp.escape(prediction)}
+      }
+      classified.each_pair { |prediction, count|
+        query = {'version' => 1,
+          'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+          'prediction' => {
+            'query' => {
+              'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }},
+              'not' => [{'label' => {'pattern' => Regexp.escape(prediction)}}]
+            },
+            'config_id' => model_config_id
+          }
+        }
+
+        result = model.list_training_data({:query => query})
+        expect_equal(num - count, result['training_data'].size)
+      }
+    }
+  end
+
+  test 'query_with_only_not_patterns' do
+    confusion_matrix.each_pair { |annotation, classified|
+      classified.each_pair { |prediction, count|
+        query = {'version' => 1,
+          'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+          'prediction' => {
+            'query' => {
+              'not' => [{'label' => {'pattern' => Regexp.escape(prediction)}}]
+            },
+            'config_id' => model_config_id
+          }
+        }
+
+        result = model.list_training_data({:query => query})
+        expect_equal(0, result['training_data'].size) # 'not' must be used with 'all' or 'any'
+      }
+    }
   end
 end
 
@@ -320,14 +333,15 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
 
   test 'all_patterns_with_each_feature1', :params => ['redbull', 'rockstar', 'coke'] do
     any_patterns = confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, _| {'label' => {'annotation' => annotation, 'prediction' => prediction}} }
+      classified.map { |prediction, _| {'annotation' => Regexp.escape(annotation), 'prediction' => Regexp.escape(prediction)} }
     }.flatten(1)
     query = {'version' => 1,
       'field' => {
         'feature1' => {'all' => [{'pattern' => param}]},
       },
+      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
-        'query' => {'any' => any_patterns},
+        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
         'config_id' => model_config_id
       }
     }
@@ -339,14 +353,15 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
 
   test 'any_patterns_with_each_feature2' do
     any_patterns = confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, _| {'label' => {'annotation' => annotation, 'prediction' => prediction}} }
+      classified.map { |prediction, _| {'annotation' => Regexp.escape(annotation), 'prediction' => Regexp.escape(prediction)} }
     }.flatten(1)
     query = {'version' => 1,
       'field' => {
         'feature2' => {'any' => [{'range' => {'from' => -1000, 'to' => 1000_000}}]}
       },
+      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
-        'query' => {'any' => any_patterns},
+        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
         'config_id' => model_config_id
       }
     }
