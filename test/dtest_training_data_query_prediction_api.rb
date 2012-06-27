@@ -132,7 +132,7 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
   test 'any_or_any_patterns_with_each_annotation', :params => combine(['all', 'any'], ['C#', 'C++', 'D']) do
     query = {'version' => 1,
       'prediction' => {
-        'query' => {param[0] => [{'label' => {'pattern' => Regexp.escape(param[1])}}]},
+        'query' => {param[0] => [{'pattern' => Regexp.escape(param[1])}]},
         'config_id' => model_config_id
       }
     }
@@ -145,7 +145,7 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
   test 'regex_patterns_with_C_prefix_prediction' do
     query = {'version' => 1,
       'prediction' => {
-        'query' => {'all' => [{'label' => {'pattern' => 'C.*'}}]},
+        'query' => {'all' => [{'pattern' => 'C.*'}]},
         'config_id' => model_config_id
       }
     }
@@ -165,7 +165,7 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
   test 'each_annotation_with_page_size', :params => ['C#', 'C++', 'D'] do
     query = {'version' => 1,
       'prediction' => {
-        'query' => {'any' => [{'label' => {'pattern' => Regexp.escape(param)}}]},
+        'query' => {'any' => [{'pattern' => Regexp.escape(param)}]},
         'config_id' => model_config_id
       }
     }
@@ -198,7 +198,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
 
   test 'any_patterns_with_each_annotation', :params => ['C#', 'C++', 'D'] do
     any_patterns = confusion_matrix.map { |annotation, classified|
-      classified.map { |prediction, _| {'label' => {'pattern' => Regexp.escape(prediction)}} }
+      classified.map { |prediction, _| {'pattern' => Regexp.escape(prediction)} }
     }.flatten(1)
     query = {'version' => 1,
       'label' => {
@@ -223,7 +223,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
       query = {'version' => 1,
         'label' => {'all' => [{'pattern' => test_set[1]}]},
         'prediction' => {
-          'query' => {param => [{'label' => {'pattern' => test_set[2]}}]},
+          'query' => {param => [{'pattern' => test_set[2]}]},
           'config_id' => model_config_id
         }
       }
@@ -239,7 +239,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
         'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
         'prediction' => {
           'query' => {'all' => classified.map { |prediction, count|
-              {'label' => {'pattern' => Regexp.escape(prediction)}}
+              {'pattern' => Regexp.escape(prediction)}
             }
           },
           'config_id' => model_config_id
@@ -258,7 +258,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
     query = {'version' => 1,
       'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
-        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
+        'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id
       }
     }
@@ -275,7 +275,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
         'prediction' => {
           'query' => {'any' => classified.map { |prediction, count|
               num += count
-              {'label' => {'pattern' => Regexp.escape(prediction)}}
+              {'pattern' => Regexp.escape(prediction)}
             }
           },
           'config_id' => model_config_id
@@ -299,8 +299,8 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
           'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
           'prediction' => {
             'query' => {
-              'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }},
-              'not' => [{'label' => {'pattern' => Regexp.escape(prediction)}}]
+              'any' => any_patterns.map { |p| {'pattern' => p['prediction']} },
+              'not' => [{'pattern' => Regexp.escape(prediction)}]
             },
             'config_id' => model_config_id
           }
@@ -319,7 +319,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
           'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
           'prediction' => {
             'query' => {
-              'not' => [{'label' => {'pattern' => Regexp.escape(prediction)}}]
+              'not' => [{'pattern' => Regexp.escape(prediction)}]
             },
             'config_id' => model_config_id
           }
@@ -361,7 +361,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
       },
       'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
-        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
+        'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id
       }
     }
@@ -381,7 +381,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
       },
       'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
-        'query' => {'any' => any_patterns.map { |p| {'label' => {'pattern' => p['prediction']} }}},
+        'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id
       }
     }
