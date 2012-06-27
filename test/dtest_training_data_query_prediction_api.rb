@@ -142,6 +142,26 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
     expect_equal(annotated_training_data_num, result['training_data'].size)
   end
 
+  test 'regex_patterns_with_C_prefix_prediction' do
+    query = {'version' => 1,
+      'prediction' => {
+        'query' => {'all' => [{'label' => {'pattern' => 'C.*'}}]},
+        'config_id' => model_config_id
+      }
+    }
+
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, labels|
+        label, count = labels
+        if label =~ /C.*/         
+          sum += count
+        end
+        sum
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(annotated_training_data_num, result['training_data'].size)
+  end
+
   test 'each_annotation_with_page_size', :params => ['C#', 'C++', 'D'] do
     query = {'version' => 1,
       'prediction' => {
