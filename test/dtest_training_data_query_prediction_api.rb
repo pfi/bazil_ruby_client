@@ -142,7 +142,7 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
     expect_equal(annotated_training_data_num, result['training_data'].size)
   end
 
-  test 'regex_patterns_with_C_prefix_prediction' do
+  test 'full_match_pattern_with_C_prefix_prediction' do
     query = {'version' => 1,
       'prediction' => {
         'query' => {'all' => [{'pattern' => 'C.*'}]},
@@ -152,7 +152,27 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
 
     annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, labels|
         label, count = labels
-        if label =~ /C.*/         
+        if label =~ /C.*/
+          sum += count
+        end
+        sum
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(annotated_training_data_num, result['training_data'].size)
+  end
+
+  test 'partial_match_pattern_with_C_prefix_prediction' do
+    query = {'version' => 1,
+      'prediction' => {
+        'query' => {'all' => [{'pattern' => 'C'}]}, # same as regex_pattern_with_C_prefix_prediction
+        'config_id' => model_config_id
+      }
+    }
+
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, labels|
+        label, count = labels
+        if label.start_with?('C')
           sum += count
         end
         sum

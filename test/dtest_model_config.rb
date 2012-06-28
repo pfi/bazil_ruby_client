@@ -181,7 +181,7 @@ TestCase 'Bazil-server config-query' do
     expect_equal(1, result['max_page'])
   end
 
-  test 'all_query_with_id' do
+  test 'all_query_with_id_full_match' do
     query = {'version' => 1, 'id' => {'all' => [{'pattern' => '.*ma$'}]}}
     result = model.query_configs(query)
     expect_equal(3, result['total'])
@@ -191,14 +191,25 @@ TestCase 'Bazil-server config-query' do
     expect_equal(1, result['total'])
   end
 
-  test 'any_query_with_id' do
+  test 'all_query_with_id_using_partial_match' do
+    query = {'version' => 1, 'id' => {'all' => [{'pattern' => 'ma'}]}}
+    result = model.query_configs(query)
+    expect_equal(3, result['total'])
+
+    query = {'version' => 1, 'id' => {'all' => [{'pattern' => 'ma'}, {'pattern' => 'sa'}]}}
+    result = model.query_configs(query)
+    expect_equal(2, result['total'])
+  end
+
+  test 'any_query_with_id_using_full_and_partial_match' do
     query = {'version' => 1, 'id' => {'any' => [{'pattern' => '.*ma$'}]}}
     result = model.query_configs(query)
     expect_equal(3, result['total'])
 
+    # saitama matched saitama and dasaitama
     query = {'version' => 1, 'id' => {'any' => [{'pattern' => 'gunma'}, {'pattern' => 'saitama'}]}}
     result = model.query_configs(query)
-    expect_equal(2, result['total'])
+    expect_equal(3, result['total'])
   end
 
   test 'and_and_any_query_with_id' do
@@ -234,7 +245,8 @@ TestCase 'Bazil-server config-query' do
     result = model.query_configs(query)
     expect_equal(3, result['total'])
 
-    query = {'version' => 1, 'description' => {'any' => [{'pattern' => 'valid'}, {'pattern' => 'invalid'}]}}
+    # valid matches 'valid' and 'invalid'
+    query = {'version' => 1, 'description' => {'any' => [{'pattern' => 'valid'}]}}
     result = model.query_configs(query)
     expect_equal(2, result['total'])
   end

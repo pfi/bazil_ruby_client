@@ -149,8 +149,8 @@ TestCase 'Bazil-server training-data-query label' do
 
   test 'any_query_with_label',
     :params => [[['.*'], 3, ['D', 'C#', 'C++']],
-                [['.', '..'], 2, ['D', 'C#']],
-                [['.', '..', '...'], 3, ['D', 'C#', 'C++']]] do
+                [['^.$', '^..$'], 2, ['D', 'C#']],
+                [['^.$', '^..$', '...'], 3, ['D', 'C#', 'C++']]] do
     query = {:version => 1, :label => {:any => param[0].map {|p| {:pattern => p}}}}
     result = model.list_training_data({:query => query})
     expect_equal(param[1], result['training_data'].size)
@@ -159,16 +159,24 @@ TestCase 'Bazil-server training-data-query label' do
     }
   end
 
-  test 'and_and_any_query_with_label' do
+  test 'all_or_any_query_with_label_using_partial_match', :params => ['any', 'all'] do
+    query = {:label => {param => [{:pattern => 'C'}]}}
+    result = model.list_training_data({:query => query})
+    expect_equal(2, result['training_data'].size)
+    expect_equal(2, result['total'])
+    expect_equal(1, result['max_page'])
+  end
+
+  test 'all_and_any_query_with_label' do
     labels = ['D', 'C++']
-    query = {:label => {:all => [{:pattern => '.'}], :any => [{:pattern => '...'}]}}
+    query = {:label => {:all => [{:pattern => '^.$'}], :any => [{:pattern => '...'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
     expect_true(labels.include?(result['training_data'][0]['label']))
     expect_true(labels.include?(result['training_data'][1]['label']))
   end
 
-  test 'and_and_not_query_with_label' do
+  test 'all_and_not_query_with_label' do
     query = {:label => {:all => [{:pattern => '.*'}], :not => [{:pattern => 'D'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
@@ -183,7 +191,7 @@ TestCase 'Bazil-server training-data-query label' do
   end
 
   test 'and_and_any_and_not_query_with_label' do
-    query = {'version' => 1, 'label' => {'all' => [{'pattern' => '.'}], 'any' => [{'pattern' => '...'}], 'not' => [{'pattern' => 'D'}]}}
+    query = {'version' => 1, 'label' => {'all' => [{'pattern' => '^.$'}], 'any' => [{'pattern' => '...'}], 'not' => [{'pattern' => 'D'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
     expect_equal('C++', result['training_data'][0]['label'])
@@ -439,7 +447,7 @@ TestCase 'Bazil-server training-data-query field' do
         'feature2' => {:any => [{:range => {:from => 0, :to => 10000}}]}
       },
       :label => {
-        :all => [{:pattern => '.'}]
+        :all => [{:pattern => '^.$'}]
       }
     }
     result = model.list_training_data({:query => query})
