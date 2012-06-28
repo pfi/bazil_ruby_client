@@ -50,7 +50,7 @@ module Bazil
 
     def application_names
       res = @http_cli.get(gen_uri('apps'))
-      # TODO: error check
+      raise_error("Failed to get names of applications", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['application_names']
     end
 
