@@ -30,7 +30,7 @@ module Bazil
 
     def to_s
       result = [@message]
-      result += @errors.map { |error| "\t#{error['file']}(#{error['line']}) = #{error['message']}" }
+      result += @errors.map { |error| "\t#{error['file']}(#{error['line']}): #{error['message']}" }
       result.join("\n")
     end
   end

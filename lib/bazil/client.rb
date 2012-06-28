@@ -15,7 +15,7 @@ module Bazil
       @http_cli = REST.new(host, port)
     end
 
-    def_delegators :@http_cli, :read_timeout, :read_timeout=
+    def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
 
     def status
       res = @http_cli.get(gen_uri('status'))
