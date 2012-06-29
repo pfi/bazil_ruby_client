@@ -39,6 +39,7 @@ TestCase 'Bazil-server train and query' do
     expect_equal('nherd', result['method'])
     expect_equal('saitama configuration', result['description'])
     result_cc = result['config']['classifier_config']
+    expect_false(result_cc.has_key?('method')) # Bazil's classifier_config does not have 'method' field
     expect_true((0.1..0.3).include?(result_cc['regularization_weight'])) # cannot check equality because to string changes float value
   end
 
