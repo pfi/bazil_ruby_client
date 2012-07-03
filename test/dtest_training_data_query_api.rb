@@ -482,3 +482,54 @@ TestCase 'Bazil-server training-data-query field' do
 
   # TODO: add a lot more invalid quries
 end
+
+TestCase 'Bazil-server training-data-query id' do
+  include_context 'bazil_case_utils'
+  include_context 'bazil_model_utils'
+  include_context 'training_data_query_test_util'
+
+  beforeCase do
+    setup_environment
+
+    create_default_application
+    create_random_model
+    prepare_training_data
+  end
+
+  afterCase do
+    delete_random_model
+    delete_default_application
+    cleanup_environment
+  end
+
+  test 'query_all_with_id' do
+    query = {:version => 1,
+      'id' => {
+        'from' => 1, 'to' => 100
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(training_data_size, result['total'])
+  end
+
+  test 'query_with_id' do
+    query = {:version => 1,
+      'id' => {
+        'from' => 1, 'to' => 5
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(5, result['total'])
+  end
+
+  test 'query_with_id_and_label', :params => [[0, [1, 3]], [0, [4, 6]], [1, [7, 9]]] do
+    query = {
+      'label' => {'all' => [{'pattern' => 'D'}]},
+      'id' => {
+        'from' => param[1].first, 'to' => param[1].last
+      }
+    }
+    result = model.list_training_data({:query => query})
+    expect_equal(param[0], result['total'])
+  end
+end
