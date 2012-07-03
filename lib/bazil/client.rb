@@ -15,7 +15,7 @@ module Bazil
       @http_cli = REST.new(host, port)
     end
 
-    def_delegators :@http_cli, :read_timeout, :read_timeout=
+    def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
 
     def status
       res = @http_cli.get(gen_uri('status'))
@@ -50,7 +50,7 @@ module Bazil
 
     def application_names
       res = @http_cli.get(gen_uri('apps'))
-      # TODO: error check
+      raise_error("Failed to get names of applications", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)['application_names']
     end
 
