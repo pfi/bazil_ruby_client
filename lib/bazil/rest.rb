@@ -53,7 +53,7 @@ module Bazil
 
     private
     def add_api_signature(uri, data, header = {})
-      return uri unless @api_key and @secret_key
+      return uri, header unless @api_key and @secret_key
 
       uri = uri.split('?')
       base = uri[0]
