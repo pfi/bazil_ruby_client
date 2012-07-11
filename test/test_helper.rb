@@ -205,13 +205,13 @@ SharedContext 'model_train_and_query_api' do
 
   def gen_random_data
     if rand(2) == 0
-      label = "OK"
+      annotation = "OK"
       mu = 1.0
     else
-      label = "NG"
+      annotation = "NG"
       mu = -1.0
     end
-    [label, make_random([mu], 1.0, 10)]
+    [annotation, make_random([mu], 1.0, 10)]
   end
 
   def naive_array_rotate(a, c)
@@ -228,15 +228,15 @@ SharedContext 'model_train_and_query_api' do
     if algorithm == "random"
       [].tap { |a|
         1100.times {
-          label, data = gen_random_data
-          a << {'label' => label, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
+          annotation, data = gen_random_data
+          a << {'annotation' => annotation, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
         }
       }
     else
       [].tap { |a|
         1100.times {
-          label, data = gen_random_data3
-          a << {'label' => label, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
+          annotation, data = gen_random_data3
+          a << {'annotation' => annotation, 'data' => {}.tap { |m| data.each_with_index { |d, i| m["f#{i}"] = d }}}
         }
       }
     end
@@ -246,7 +246,7 @@ SharedContext 'model_train_and_query_api' do
     collect_result = 0
     classify_data.each { |random_data|
       max_label, = model.query(random_data['data'])
-      collect_result +=1 if random_data['label'] == max_label
+      collect_result +=1 if random_data['annotation'] == max_label
     }
     collect_result
   end

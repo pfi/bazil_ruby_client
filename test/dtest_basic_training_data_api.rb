@@ -27,7 +27,7 @@ TestCase 'Bazil-server training-data' do
 
     got_training_data = model.training_data(1)
     expect_equal(1, got_training_data['id'])
-    expect_equal('', got_training_data['label'])
+    expect_equal('', got_training_data['annotation'])
     expect_equal(training_data, got_training_data['data'])
   end
 
@@ -94,11 +94,11 @@ TestCase 'Bazil-server training-data' do
 
     got_training_data = model.training_data(training_data_id)
     expect_equal(training_data_id, got_training_data['id'])
-    expect_equal('', got_training_data['label'])
+    expect_equal('', got_training_data['annotation'])
     expect_equal({'red' => 'blue'}, got_training_data['data'])
   end
 
-  test 'put_update_with_label' do
+  test 'put_update_with_annotation' do
     training_data = {'red' => 'bull'}
     result = model.put_training_data(training_data)
     training_data_id = result['id']
@@ -108,7 +108,7 @@ TestCase 'Bazil-server training-data' do
     got_training_data = model.training_data(training_data_id)
     assert_equal(training_data_id, got_training_data['id'])
     assert_equal(training_data, got_training_data['data'])
-    expect_equal('wing', got_training_data['label'])
+    expect_equal('wing', got_training_data['annotation'])
   end
 
   test 'delete_all_training_data' do

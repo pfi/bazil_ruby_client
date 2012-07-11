@@ -25,7 +25,7 @@ TestCase 'Bazil-server train and query' do
     train_data, classify_data = gen_data('random')
 
     train_data.each { |random_data|
-      model.train(random_data['label'], random_data['data'])
+      model.train(random_data['annotation'], random_data['data'])
     }
 
     collect_result = classify(classify_data)
@@ -46,7 +46,7 @@ TestCase 'Bazil-server train and query' do
     train_data, classify_data = gen_data('random3')
 
     train_data.each { |random_data|
-      model.train(random_data['label'], random_data['data'])
+      model.train(random_data['annotation'], random_data['data'])
     }
 
     collect_result = classify(classify_data)
@@ -91,7 +91,7 @@ TestCase 'Bazil-server retrain' do
     train_data, classify_data = gen_data(param)
 
     train_data.each { |random_data|
-      result = model.train(random_data['label'], random_data['data'])
+      result = model.train(random_data['annotation'], random_data['data'])
     }
 
     collect_result = classify(classify_data)
@@ -115,7 +115,7 @@ TestCase 'Bazil-server retrain' do
     train_data, classify_data = gen_data(param)
 
     train_data.each { |random_data|
-      result = model.train(random_data['label'], random_data['data'])
+      result = model.train(random_data['annotation'], random_data['data'])
     }
 
     collect_result = classify(classify_data)
@@ -138,7 +138,7 @@ TestCase 'Bazil-server retrain' do
     train_data, classify_data = gen_data('random')
 
     train_data.each { |random_data|
-      result = model.train(random_data['label'], random_data['data'])
+      result = model.train(random_data['annotation'], random_data['data'])
     }
 
     collect_result = classify(classify_data)

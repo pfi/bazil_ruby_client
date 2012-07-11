@@ -94,8 +94,8 @@ module Bazil
 
     # TODO: label APIs
 
-    def train(label, data, config_id = get_default_config_id)
-      data = %({"label": "#{label}", "data": #{data.to_json}, "config_id": "#{config_id}"})
+    def train(annotation, data, config_id = get_default_config_id)
+      data = %({"annotation": "#{annotation}", "data": #{data.to_json}, "config_id": "#{config_id}"})
       body = post("training_data", data, "Failed to post training data")
       JSON.parse(body)
     end
@@ -157,19 +157,23 @@ module Bazil
       JSON.parse(body)
     end
 
-    def put_labeled_training_data(label, data, config_id = get_default_config_id)
+    def put_annotated_training_data(annotation, data, config_id = get_default_config_id)
       new_data = {}
-      new_data['label'] = label if label
+      new_data['annotation'] = annotation if annotation
       new_data['data'] = data if data
       new_data['config_id'] = config_id if config_id
       body = post('training_data', new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
-    def update_training_data(id, label, data, config_id = get_default_config_id)
+    def put_labeled_training_data(annotation, data, config_id = get_default_config_id)
+      put_annotated_training_data(annotation, data, config_id)
+    end
+
+    def update_training_data(id, annotation, data, config_id = get_default_config_id)
       # TODO: type check of id
       new_data = {}
-      new_data['label'] = label if label
+      new_data['annotation'] = annotation if annotation
       new_data['data'] = data if data
       new_data['config_id'] = config_id
       send(:put, "training_data/#{id}", new_data.to_json, "Failed to update training data")

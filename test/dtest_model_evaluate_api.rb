@@ -17,7 +17,7 @@ TestCase 'Bazil-server evaluate cross_validation' do
 
     train_data, classify_data = gen_data('random3')
     train_data.each { |random_data|
-      model.train(random_data['label'], random_data['data'])
+      model.train(random_data['annotation'], random_data['data'])
     }
   }
 

@@ -11,20 +11,20 @@ SharedContext 'training_data_prediction_query_test_util' do
     # add training data
     # string value data
     ['redbull', 'rockstar', 'coke'].each_with_index { |value, i|
-      training_data = {'label' => annotations[i], 'data' => {'feature1' => value}}
+      training_data = {'annotation' => annotations[i], 'data' => {'feature1' => value}}
       training_data_set << training_data.merge(model.train(annotations[i], {'feature1' => value}))
     }
 
     # number value data
     [500, 100_000, -1].each_with_index { |value, i|
-      training_data = {'label' => annotations[i], 'data' => {'feature2' => value}}
+      training_data = {'annotation' => annotations[i], 'data' => {'feature2' => value}}
       training_data_set << training_data.merge(model.train(annotations[i], {'feature2' => value}))
     }
 
-    # data with label
-    [['C#', ['rockstar', 10]], ['C++', ['coke', -1]], ['D', ['redbull', 1000]]].each { |label, value|
-      training_data = {'label' => label, 'data' => {'feature1' => value[0], 'feature2' => value[1]}}
-      training_data_set << training_data.merge(model.train(label, {'feature1' => value[0], 'feature2' => value[1]}))
+    # data with annotation
+    [['C#', ['rockstar', 10]], ['C++', ['coke', -1]], ['D', ['redbull', 1000]]].each { |annotation, value|
+      training_data = {'annotation' => annotation, 'data' => {'feature1' => value[0], 'feature2' => value[1]}}
+      training_data_set << training_data.merge(model.train(annotation, {'feature1' => value[0], 'feature2' => value[1]}))
     }
 
     # In NHERD with above training data, classifier returns following result.
@@ -49,15 +49,15 @@ SharedContext 'training_data_prediction_query_test_util' do
     # Following test assumes this result
 
     confusion_matrix = {}
-    annotations.each { |label|
-      confusion_matrix[label] = {}
+    annotations.each { |annotation|
+      confusion_matrix[annotation] = {}
       annotations.each { |l|
-        confusion_matrix[label][l] = 0
+        confusion_matrix[annotation][l] = 0
       }
     }
     training_data_set.each { |td|
       max_label, = model.query(td['data'], model_config_id)
-      confusion_matrix[td['label']][max_label] += 1
+      confusion_matrix[td['annotation']][max_label] += 1
     }
 
     set :confusion_matrix, confusion_matrix
@@ -150,9 +150,9 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
       }
     }
 
-    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, labels|
-        label, count = labels
-        if label =~ /C.*/
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, annotations|
+        annotation, count = annotations
+        if annotation =~ /C.*/
           sum += count
         end
         sum
@@ -170,9 +170,9 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
       }
     }
 
-    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, labels|
-        label, count = labels
-        if label.start_with?('C')
+    annotated_training_data_num = confusion_matrix.inject(0) { |sum, classified| sum + classified.last.inject(0) { |sum, annotations|
+        annotation, count = annotations
+        if annotation.start_with?('C')
           sum += count
         end
         sum
@@ -197,7 +197,7 @@ TestCase 'Bazil-server training-data-query multi-class only prediction' do
   end
 end
 
-TestCase 'Bazil-server training-data-query multi-class prediction with label condition' do
+TestCase 'Bazil-server training-data-query multi-class prediction with annotation condition' do
   include_context 'bazil_case_utils'
   include_context 'bazil_model_utils'
   include_context 'training_data_prediction_query_test_util'
@@ -221,7 +221,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
       classified.map { |prediction, _| {'pattern' => Regexp.escape(prediction)} }
     }.flatten(1)
     query = {'version' => 1,
-      'label' => {
+      'annotation' => {
         'all' => [{'pattern' => Regexp.escape(param)}]
       },
       'prediction' => {
@@ -241,7 +241,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
       classified.map { |prediction, count| [count, Regexp.escape(annotation), Regexp.escape(prediction)] }
     }.flatten(1).each { |test_set|
       query = {'version' => 1,
-        'label' => {'all' => [{'pattern' => test_set[1]}]},
+        'annotation' => {'all' => [{'pattern' => test_set[1]}]},
         'prediction' => {
           'query' => {param => [{'pattern' => test_set[2]}]},
           'config_id' => model_config_id
@@ -256,7 +256,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
   test 'query_with_all_patterns' do
     confusion_matrix.each_pair { |annotation, classified|
       query = {'version' => 1,
-        'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+        'annotation' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
         'prediction' => {
           'query' => {'all' => classified.map { |prediction, count|
               {'pattern' => Regexp.escape(prediction)}
@@ -276,7 +276,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
       classified.map { |prediction, count| {'annotation' => Regexp.escape(annotation), 'prediction' => Regexp.escape(prediction)} }
     }.flatten(1)
     query = {'version' => 1,
-      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+      'annotation' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
         'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id
@@ -291,7 +291,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
     confusion_matrix.each_pair { |annotation, classified|
       num = 0
       query = {'version' => 1,
-        'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+        'annotation' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
         'prediction' => {
           'query' => {'any' => classified.map { |prediction, count|
               num += count
@@ -316,7 +316,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
       }
       classified.each_pair { |prediction, count|
         query = {'version' => 1,
-          'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+          'annotation' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
           'prediction' => {
             'query' => {
               'any' => any_patterns.map { |p| {'pattern' => p['prediction']} },
@@ -336,7 +336,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with label con
     confusion_matrix.each_pair { |annotation, classified|
       classified.each_pair { |prediction, count|
         query = {'version' => 1,
-          'label' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
+          'annotation' => { 'all' => [{'pattern' => Regexp.escape(annotation)}]},
           'prediction' => {
             'query' => {
               'not' => [{'pattern' => Regexp.escape(prediction)}]
@@ -379,7 +379,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
       'field' => {
         'feature1' => {'all' => [{'pattern' => param}]},
       },
-      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+      'annotation' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
         'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id
@@ -399,7 +399,7 @@ TestCase 'Bazil-server training-data-query multi-class prediction with field con
       'field' => {
         'feature2' => {'any' => [{'range' => {'from' => -1000, 'to' => 1000_000}}]}
       },
-      'label' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
+      'annotation' => {'any' => any_patterns.map { |p| {'pattern' => p['annotation']}}},
       'prediction' => {
         'query' => {'any' => any_patterns.map { |p| {'pattern' => p['prediction']} }},
         'config_id' => model_config_id

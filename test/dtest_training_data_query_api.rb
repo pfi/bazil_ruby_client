@@ -17,16 +17,16 @@ SharedContext 'training_data_query_test_util' do
       model.put_training_data({'num_feature' => value})
     }
 
-    # data with label
-    [['C#', ['net', 10]], ['C++', ['owkn', -1]], ['D', ['god', 1000]]].each { |label, value|
-      model.train(label, {'feature1' => value[0], 'feature2' => value[1]})
+    # data with annotation
+    [['C#', ['net', 10]], ['C++', ['owkn', -1]], ['D', ['god', 1000]]].each { |annotation, value|
+      model.train(annotation, {'feature1' => value[0], 'feature2' => value[1]})
     }
 
     set :training_data_size, get_training_data_size
   end
 end
 
-TestCase 'Bazil-server training-data-query label' do
+TestCase 'Bazil-server training-data-query annotation' do
   include_context 'bazil_case_utils'
   include_context 'bazil_model_utils'
   include_context 'training_data_query_test_util'
@@ -60,15 +60,15 @@ TestCase 'Bazil-server training-data-query label' do
   # TODO: activate this test
 =begin
   test 'query_without_version' do
-    query = {'label' => {'all' => [{'pattern' => '.*'}]}}
+    query = {'annotation' => {'all' => [{'pattern' => '.*'}]}}
     result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
     expect_true(result.has_key?("errors"))
   end
 =end
 
-  test 'exist_query_with_label', :params => [[true, 3], [false, 6]] do
+  test 'exist_query_with_annotation', :params => [[true, 3], [false, 6]] do
     query = {
-      :label => {
+      :annotation => {
         :exist => param[0]
       }
     }
@@ -77,9 +77,9 @@ TestCase 'Bazil-server training-data-query label' do
     expect_equal(param[1], result['training_data'].size)
   end
 
-  test 'invalid_exist_query_with_label', :params => [nil, 1, 'test', [1, 2], {'key' => 'value'}] do
+  test 'invalid_exist_query_with_annotation', :params => [nil, 1, 'test', [1, 2], {'key' => 'value'}] do
     query = {
-      :label => {
+      :annotation => {
         :exist => param
       }
     }
@@ -89,112 +89,112 @@ TestCase 'Bazil-server training-data-query label' do
     }
   end
 
-  test 'all_query_with_label',
+  test 'all_query_with_annotation',
     :params => [[3, [{:pattern => '.*'}]],
                 [1, [{:pattern => '^C.*'}, {:pattern => '^.\#$'}]],
                 [0, [{:pattern => 'C#'}, {:pattern => 'C\+\+'}, {:pattern => 'D'}]]] do
 
-    query = {:label => {:all => param[1]}}
+    query = {:annotation => {:all => param[1]}}
     result = model.list_training_data({:query => query})
     expect_equal(param[0], result['training_data'].size)
 
     # TODO: Check this specific case
 =begin
-    query = {'version' => 1, 'label' => {'all' => }}
+    query = {'version' => 1, 'annotation' => {'all' => }}
     result = JSON.parse(post.call(query.to_json, "/apps/#{app_name}/models/#{model_name}/training_data/query").body)
     expect_equal(1, result['training_data'].size)
-    expect_equal('C#', result['training_data'][0]['label'])
+    expect_equal('C#', result['training_data'][0]['annotation'])
 =end
   end
 
-  test 'specific_all_query_with_label' do
-    query = {:label => {:all => [{:pattern => '^C.*'}, {:pattern => '^.\#$'}]}}
+  test 'specific_all_query_with_annotation' do
+    query = {:annotation => {:all => [{:pattern => '^C.*'}, {:pattern => '^.\#$'}]}}
     result = model.list_training_data({:query => query})
     assert_equal(1, result['training_data'].size)
-    expect_equal('C#', result['training_data'][0]['label'])
+    expect_equal('C#', result['training_data'][0]['annotation'])
   end
 
-  test 'all_query_with_label_with_page_size', :params => (1..3).to_a do
-    labeled_training_data_size = 3
-    query = {:version => 1, :label => {:all => [{:pattern => '.*'}]}}
+  test 'all_query_with_annotation_with_page_size', :params => (1..3).to_a do
+    annotated_training_data_size = 3
+    query = {:version => 1, :annotation => {:all => [{:pattern => '.*'}]}}
     result = model.list_training_data({:page_size => param, :query => query})
     expect_equal(param, result['training_data'].size)
-    expect_equal((labeled_training_data_size + param - 1) / param, result['max_page'])
+    expect_equal((annotated_training_data_size + param - 1) / param, result['max_page'])
   end
 
-  test 'all_query_with_label_with_page_and_page_size', :params => combine([1, 2, 3], [1, 2, 3]) do # [page, page_size]
+  test 'all_query_with_annotation_with_page_and_page_size', :params => combine([1, 2, 3], [1, 2, 3]) do # [page, page_size]
     page = param[0]
     page_size = param[1]
-    labeled_training_data_size = 3
+    annotated_training_data_size = 3
 
-    query = {:label => {:all => [{:pattern => '.*'}]}}
+    query = {:annotation => {:all => [{:pattern => '.*'}]}}
     result = model.list_training_data({:page => page, :page_size => page_size, :query => query})
 
-    expected_training_data_size = [[0, labeled_training_data_size - page_size * (page - 1)].max,
+    expected_training_data_size = [[0, annotated_training_data_size - page_size * (page - 1)].max,
                                    page_size].min
-    expected_max_page = (labeled_training_data_size + page_size - 1) / page_size
+    expected_max_page = (annotated_training_data_size + page_size - 1) / page_size
 
-    expect_equal(labeled_training_data_size, result['total'])
+    expect_equal(annotated_training_data_size, result['total'])
     expect_equal(expected_training_data_size, result['training_data'].size)
     expect_equal(expected_max_page, result['max_page'])
   end
 
-  test '0_hit_all_query_with_label' do
-    query = {:label => {:all => [{:pattern => 'unknownn'}]}}
+  test '0_hit_all_query_with_annotation' do
+    query = {:annotation => {:all => [{:pattern => 'unknownn'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(0, result['training_data'].size)
     expect_equal(0, result['total'])
     expect_equal(0, result['max_page'])
   end
 
-  test 'any_query_with_label',
+  test 'any_query_with_annotation',
     :params => [[['.*'], 3, ['D', 'C#', 'C++']],
                 [['^.$', '^..$'], 2, ['D', 'C#']],
                 [['^.$', '^..$', '...'], 3, ['D', 'C#', 'C++']]] do
-    query = {:version => 1, :label => {:any => param[0].map {|p| {:pattern => p}}}}
+    query = {:version => 1, :annotation => {:any => param[0].map {|p| {:pattern => p}}}}
     result = model.list_training_data({:query => query})
     expect_equal(param[1], result['training_data'].size)
     result['training_data'].each {|d|
-      expect_true(param[2].include?(d['label']))
+      expect_true(param[2].include?(d['annotation']))
     }
   end
 
-  test 'all_or_any_query_with_label_using_partial_match', :params => ['any', 'all'] do
-    query = {:label => {param => [{:pattern => 'C'}]}}
+  test 'all_or_any_query_with_annotation_using_partial_match', :params => ['any', 'all'] do
+    query = {:annotation => {param => [{:pattern => 'C'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
     expect_equal(2, result['total'])
     expect_equal(1, result['max_page'])
   end
 
-  test 'all_and_any_query_with_label' do
-    labels = ['D', 'C++']
-    query = {:label => {:all => [{:pattern => '^.$'}], :any => [{:pattern => '...'}]}}
+  test 'all_and_any_query_with_annotation' do
+    annotations = ['D', 'C++']
+    query = {:annotation => {:all => [{:pattern => '^.$'}], :any => [{:pattern => '...'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
-    expect_true(labels.include?(result['training_data'][0]['label']))
-    expect_true(labels.include?(result['training_data'][1]['label']))
+    expect_true(annotations.include?(result['training_data'][0]['annotation']))
+    expect_true(annotations.include?(result['training_data'][1]['annotation']))
   end
 
-  test 'all_and_not_query_with_label' do
-    query = {:label => {:all => [{:pattern => '.*'}], :not => [{:pattern => 'D'}]}}
-    result = model.list_training_data({:query => query})
-    expect_equal(2, result['training_data'].size)
-    # TODO: check include?
-  end
-
-  test 'any_and_not_query_with_label' do
-    query = {'version' => 1, 'label' => {'any' => [{'pattern' => '.*'}], 'not' => [{'pattern' => 'D'}]}}
+  test 'all_and_not_query_with_annotation' do
+    query = {:annotation => {:all => [{:pattern => '.*'}], :not => [{:pattern => 'D'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(2, result['training_data'].size)
     # TODO: check include?
   end
 
-  test 'and_and_any_and_not_query_with_label' do
-    query = {'version' => 1, 'label' => {'all' => [{'pattern' => '^.$'}], 'any' => [{'pattern' => '...'}], 'not' => [{'pattern' => 'D'}]}}
+  test 'any_and_not_query_with_annotation' do
+    query = {'version' => 1, 'annotation' => {'any' => [{'pattern' => '.*'}], 'not' => [{'pattern' => 'D'}]}}
+    result = model.list_training_data({:query => query})
+    expect_equal(2, result['training_data'].size)
+    # TODO: check include?
+  end
+
+  test 'and_and_any_and_not_query_with_annotation' do
+    query = {'version' => 1, 'annotation' => {'all' => [{'pattern' => '^.$'}], 'any' => [{'pattern' => '...'}], 'not' => [{'pattern' => 'D'}]}}
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
-    expect_equal('C++', result['training_data'][0]['label'])
+    expect_equal('C++', result['training_data'][0]['annotation'])
   end
 end
 
@@ -353,7 +353,7 @@ TestCase 'Bazil-server training-data-query field' do
     }
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
-    expect_equal('D', result['training_data'][0]['label'])
+    expect_equal('D', result['training_data'][0]['annotation'])
   end
 
   test 'all_and_exist_query_with_two_fields' do
@@ -413,50 +413,50 @@ TestCase 'Bazil-server training-data-query field' do
     expect_equal(3, result['training_data'].size)
   end
 
-  test 'query_with_label_and_field_1' do
+  test 'query_with_annotation_and_field_1' do
     query = {:version => 1, 
       :field => {
         'feature2' => {:any => [{:range => {:from => 0, :to => 100}}]}
       },
-      :label => {
+      :annotation => {
         :all => [{:pattern => '^C.*'}]
       }
     }
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
-    expect_equal('C#', result['training_data'][0]['label'])
+    expect_equal('C#', result['training_data'][0]['annotation'])
   end
 
-  test 'query_with_label_and_field_2' do
+  test 'query_with_annotation_and_field_2' do
     query = {:version => 1,
       :field => {
         'feature2' => {:any => [{:range => {:from => -100, :to => 0}}]}
       },
-      :label => {
+      :annotation => {
         :all => [{:pattern => '^C.*'}]
       }
     }
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
-    expect_equal('C++', result['training_data'][0]['label'])
+    expect_equal('C++', result['training_data'][0]['annotation'])
   end
 
-  test 'query_with_label_and_field_3' do
+  test 'query_with_annotation_and_field_3' do
     query = {:version => 1,
       :field => {
         'feature2' => {:any => [{:range => {:from => 0, :to => 10000}}]}
       },
-      :label => {
+      :annotation => {
         :all => [{:pattern => '^.$'}]
       }
     }
     result = model.list_training_data({:query => query})
     expect_equal(1, result['training_data'].size)
-    expect_equal('D', result['training_data'][0]['label'])
+    expect_equal('D', result['training_data'][0]['annotation'])
   end
 
-  test 'query_with_label_and_field', :params => [{'version' => 1}, {'version' => 1, 'label' => {}, 'field' => {}},
-                                                 {'version' => 1, 'label' => {}}, {'version' => 1, 'field' => {}}] do
+  test 'query_with_annotation_and_field', :params => [{'version' => 1}, {'version' => 1, 'annotation' => {}, 'field' => {}},
+                                                 {'version' => 1, 'annotation' => {}}, {'version' => 1, 'field' => {}}] do
     result = model.list_training_data({:query => param})
     expect_equal(9, result['training_data'].size)
     expect_equal(9, result['total'])
@@ -522,9 +522,9 @@ TestCase 'Bazil-server training-data-query id' do
     expect_equal(5, result['total'])
   end
 
-  test 'query_with_id_and_label', :params => [[0, [1, 3]], [0, [4, 6]], [1, [7, 9]]] do
+  test 'query_with_id_and_annotation', :params => [[0, [1, 3]], [0, [4, 6]], [1, [7, 9]]] do
     query = {
-      'label' => {'all' => [{'pattern' => 'D'}]},
+      'annotation' => {'all' => [{'pattern' => 'D'}]},
       'id' => {
         'from' => param[1].first, 'to' => param[1].last
       }
