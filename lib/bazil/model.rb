@@ -95,8 +95,14 @@ module Bazil
     # TODO: label APIs
 
     def train(annotation, data, config_id = get_default_config_id)
-      data = %({"annotation": "#{annotation}", "data": #{data.to_json}, "config_id": "#{config_id}"})
-      body = post("training_data", data, "Failed to post training data")
+      raise ArgumentError, 'Annotation must be not nil' if annotation.nil?
+      raise ArgumentError, 'Data must be not nil' if data.nil?
+
+      new_data = {}
+      new_data['annotation'] = annotation if annotation
+      new_data['data'] = data if data
+      new_data['config_id'] = config_id if config_id
+      body = post("training_data", new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
@@ -106,8 +112,10 @@ module Bazil
     end
 
     def evaluate(method, config, config_id = get_default_config_id)
-      data = %({"method": "#{method}", "config": #{config.to_json}})
-      body = post(target_path(config_id, "evaluate"), data, "Failed to execute evaluate")
+      new_data = {}
+      new_data['method'] = method if method
+      new_data['config'] = config if config
+      body = post(target_path(config_id, "evaluate"), new_data.to_json, "Failed to execute evaluate")
       JSON.parse(body)
     end
 
@@ -148,12 +156,10 @@ module Bazil
 
     # TODO: Merge put_labeled_training_data
     def put_training_data(data, config_id = get_default_config_id)
-      if config_id.nil?
-        data = %({"data": #{data.to_json}})
-      else
-        data = %({"data": #{data.to_json}, "config_id": "#{config_id}"})
-      end
-      body = post('training_data', data, "Failed to post training data")
+      new_data = {}
+      new_data['data'] = data
+      new_data['config_id'] = config_id if config_id
+      body = post('training_data', new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
