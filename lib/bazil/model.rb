@@ -112,9 +112,14 @@ module Bazil
     end
 
     def trace(method, data, config_id = get_default_config_id)
+      trace_with_config(method, data, nil, config_id)
+    end
+
+    def trace_with_config(method, data, config, config_id = get_default_config_id)
       new_data = {}
       new_data['method'] = method if method
       new_data['data'] = data if data
+      new_data['config'] = config if config
       body = post(target_path(config_id, "trace"), new_data.to_json, "Failed to execute trace")
       JSON.parse(body)
     end
