@@ -16,6 +16,7 @@ TestCase 'Bazil-server model' do
     set :model_config, {
       'model_type' => 'multi_class',
       'description' => 'application test',
+      'short_description' => 'saitamapp',
       'model_config' => {
         'method' => 'nherd',
         'description' => 'saitama configuration',
@@ -90,6 +91,8 @@ TestCase 'Bazil-server model' do
     expect_true(app_name, result['application_name'])
     expect_true(model_name, result['model_name'])
     expect_true('multi_class', result['model_type'])
+    expect_true('application test', result['description'])
+    expect_true('saitamapp', result['short_description'])
   end
 
   test 'get_models' do
@@ -104,6 +107,15 @@ TestCase 'Bazil-server model' do
     now = model.model_config
     expect_not_equal(prev['description'], now['description'])
     expect_equal('ore ga saitama da!', now['description'])
+  end
+
+  test 'update_model_config_short_description' do
+    model = app.create_model(model_name, model_config_id, model_config)
+    prev = model.model_config
+    model.update_model_config({'short_description' => 'No saitama'})
+    now = model.model_config
+    expect_not_equal(prev['short_description'], now['short_description'])
+    expect_equal('No saitama', now['short_description'])
   end
 
   # TODO: separate test
