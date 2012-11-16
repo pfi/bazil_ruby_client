@@ -10,12 +10,11 @@ module Bazil
   class REST
     extend Forwardable
 
-    def initialize(host, port, opt = {})
-      @http = Net::HTTP.new(host, port)
-      read_timeout = opt[:read_timeout] if opt.has_key?(:read_timeout)
+    def initialize(http)
+      @http = http
     end
 
-    def_delegators :@http, :read_timeout, :read_timeout=, :use_ssl=, :ca_file=, :verify_mode=, :ssl_version=
+    def_delegators :@http, :read_timeout, :read_timeout=
 
     def set_api_keys(key, secret)
       @api_key = key

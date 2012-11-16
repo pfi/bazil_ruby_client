@@ -23,19 +23,14 @@ module Bazil
     SKIP_VERIFY_KEY = 'skip_verify'
     DEFAULT_SKIP_VERIFY = false
 
-    public
-
-    def initialize(host, port, options=nil)
-      @http_cli = REST.new(host, port)
-      return if options.nil?
-
-      if options.class == String then
+    def set_ssl_options(http, options)
+      if options.kind_of? String then
         options = {CA_FILE_KEY => options}
       end
       options[VERSION_KEY] ||= DEFAULT_VERSION
       options[SKIP_VERIFY_KEY] ||= DEFAULT_SKIP_VERIFY
 
-      unless options[CA_FILE_KEY].class == String && options[CA_FILE_KEY][0] == '/' then
+      unless options[CA_FILE_KEY].kind_of?(String) && options[CA_FILE_KEY][0] == '/' then
         raise "ca_file option must be absolute path"
       end
       unless File::exists? options[CA_FILE_KEY] then
@@ -46,14 +41,22 @@ module Bazil
         raise "Unknwon SSL version: '#{options[VERSION_KEY]}'"
       end
 
-      unless options[SKIP_VERIFY_KEY].class == TrueClass || options[SKIP_VERIFY_KEY].class == FalseClass then
+      unless options[SKIP_VERIFY_KEY].kind_of?(TrueClass) || options[SKIP_VERIFY_KEY].kind_of?(FalseClass) then
         raise "skip_verify option must be boolean value"
       end
 
-      @http_cli.use_ssl = true
-      @http_cli.ca_file = options[CA_FILE_KEY]
-      @http_cli.ssl_version = AVAILABLE_VERSIONS[options[VERSION_KEY]]
-      @http_cli.verify_mode = options[SKIP_VERIFY_KEY] ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+      http.use_ssl = true
+      http.ca_file = options[CA_FILE_KEY]
+      http.ssl_version = AVAILABLE_VERSIONS[options[VERSION_KEY]]
+      http.verify_mode = options[SKIP_VERIFY_KEY] ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+    end
+
+    public
+
+    def initialize(host, port, options=nil)
+      http = Net::HTTP.new(host, port)
+      set_ssl_options(http, options) unless options.nil?
+      @http_cli = REST.new(http)
     end
 
     def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
