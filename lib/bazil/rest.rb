@@ -15,7 +15,7 @@ module Bazil
       read_timeout = opt[:read_timeout] if opt.has_key?(:read_timeout)
     end
 
-    def_delegators :@http, :read_timeout, :read_timeout=
+    def_delegators :@http, :read_timeout, :read_timeout=, :use_ssl=, :ca_file=, :verify_mode=, :ssl_version=
 
     def set_api_keys(key, secret)
       @api_key = key

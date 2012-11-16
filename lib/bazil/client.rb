@@ -3,6 +3,7 @@ require 'forwardable'
 require 'rubygems'
 require 'json'
 require 'net/http'
+require 'net/https'
 require 'bazil/application'
 require 'bazil/rest'
 require 'bazil/error'
@@ -11,8 +12,48 @@ module Bazil
   class Client
     extend Forwardable
 
-    def initialize(host, port)
+    private
+
+    CA_FILE_KEY = 'ca_file'
+
+    VERSION_KEY = 'version'
+    AVAILABLE_VERSIONS = {SSLv2: "SSLv2", SSLv3: "SSLv3", TLSv1: "TLSv1"}
+    DEFAULT_VERSION = :TLSv1
+
+    SKIP_VERIFY_KEY = 'skip_verify'
+    DEFAULT_SKIP_VERIFY = false
+
+    public
+
+    def initialize(host, port, options=nil)
       @http_cli = REST.new(host, port)
+      return if options.nil?
+
+      if options.class == String then
+        options = {CA_FILE_KEY => options}
+      end
+      options[VERSION_KEY] ||= DEFAULT_VERSION
+      options[SKIP_VERIFY_KEY] ||= DEFAULT_SKIP_VERIFY
+
+      unless options[CA_FILE_KEY].class == String && options[CA_FILE_KEY][0] == '/' then
+        raise "ca_file option must be absolute path"
+      end
+      unless File::exists? options[CA_FILE_KEY] then
+        raise "ca_file '#{options[CA_FILE_KEY]}' doesn't exists"
+      end
+
+      unless AVAILABLE_VERSIONS.has_key? options[VERSION_KEY] then
+        raise "Unknwon SSL version: '#{options[VERSION_KEY]}'"
+      end
+
+      unless options[SKIP_VERIFY_KEY].class == TrueClass || options[SKIP_VERIFY_KEY].class == FalseClass then
+        raise "skip_verify option must be boolean value"
+      end
+
+      @http_cli.use_ssl = true
+      @http_cli.ca_file = options[CA_FILE_KEY]
+      @http_cli.ssl_version = AVAILABLE_VERSIONS[options[VERSION_KEY]]
+      @http_cli.verify_mode = options[SKIP_VERIFY_KEY] ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
     end
 
     def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
