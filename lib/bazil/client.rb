@@ -17,7 +17,7 @@ module Bazil
     CA_FILE_KEY = 'ca_file'
 
     VERSION_KEY = 'version'
-    AVAILABLE_VERSIONS = {SSLv2: "SSLv2", SSLv3: "SSLv3", TLSv1: "TLSv1"}
+    AVAILABLE_VERSIONS = {SSLv3: "SSLv3", TLSv1: "TLSv1"}
     DEFAULT_VERSION = :TLSv1
 
     SKIP_VERIFY_KEY = 'skip_verify'
