@@ -27,7 +27,7 @@ TestCase 'Bazil-server training-data' do
 
     got_training_data = model.training_data(1)
     expect_equal(1, got_training_data['id'])
-    expect_equal('', got_training_data['annotation'])
+    expect_equal(nil, got_training_data['annotation'])
     expect_equal(training_data, got_training_data['data'])
   end
 
@@ -94,7 +94,7 @@ TestCase 'Bazil-server training-data' do
 
     got_training_data = model.training_data(training_data_id)
     expect_equal(training_data_id, got_training_data['id'])
-    expect_equal('', got_training_data['annotation'])
+    expect_equal(nil, got_training_data['annotation'])
     expect_equal({'red' => 'blue'}, got_training_data['data'])
   end
 
