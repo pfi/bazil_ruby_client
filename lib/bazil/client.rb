@@ -63,7 +63,7 @@ module Bazil
 
     def get_ssl_version_option(options)
       unless options.has_key? VERSION_KEY
-        return DEFAULT_VERSION
+        return AVAILABLE_VERSIONS[DEFAULT_VERSION]
       end
 
       unless AVAILABLE_VERSIONS.has_key? options[VERSION_KEY]
@@ -75,7 +75,7 @@ module Bazil
 
     def get_verify_mode_option(options)
       unless options.has_key? SKIP_VERIFY_KEY
-        return DEFAULT_SKIP_VERIFY
+        return DEFAULT_SKIP_VERIFY ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
       end
 
       unless options[SKIP_VERIFY_KEY].kind_of?(TrueClass) || options[SKIP_VERIFY_KEY].kind_of?(FalseClass)
@@ -92,7 +92,7 @@ module Bazil
 
       if get_disable_ssl_option(options)
         SSL_OPTIONS.each { |k|
-          raise "'#{invalid_key}' option must be set with 'disable_ssl=false'" if options.include? k
+          raise "'#{k}' option must be set with 'disable_ssl=false'" if options.include? k
         }
         return
       end
