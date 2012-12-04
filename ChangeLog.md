@@ -1,5 +1,4 @@
-Version 0.4.0
-=============
+## Version 0.4.0 ##
 
 Features:
 
@@ -8,8 +7,8 @@ Features:
  - Change `Bazil::Client.new(host, port, {"ca_file" => '/path/to/ca_file'})` to `Bazil::Client.new(host, port, {ca_file: '/path/to/ca_file'})`
 - ChangeLog: Add ChangeLog
 
-Version 0.3.0
-=============
+
+## Version 0.3.0 ##
 
 Features:
 
@@ -24,8 +23,8 @@ Fixes:
 
 - Fix test to support non-string annotation
 
-Version 0.2.0
-=============
+
+## Version 0.2.0 ##
 
 Features:
 
