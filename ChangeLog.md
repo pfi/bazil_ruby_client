@@ -1,4 +1,4 @@
-## Version 0.4.0 ##
+## Version 0.4.0 (2012-12-04) ##
 
 Features:
 
@@ -8,7 +8,7 @@ Features:
 - ChangeLog: Add ChangeLog
 
 
-## Version 0.3.0 ##
+## Version 0.3.0 (2012-07-12) ##
 
 Features:
 
@@ -24,7 +24,7 @@ Fixes:
 - Fix test to support non-string annotation
 
 
-## Version 0.2.0 ##
+## Version 0.2.0 (2012-07-10) ##
 
 Features:
 
