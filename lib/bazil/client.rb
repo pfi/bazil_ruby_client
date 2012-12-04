@@ -14,17 +14,17 @@ module Bazil
 
     private
 
-    CA_FILE_KEY = 'ca_file'
+    CA_FILE_KEY = :ca_file
     DEFAULT_CA_FILE = nil
 
-    VERSION_KEY = 'version'
+    VERSION_KEY = :version
     AVAILABLE_VERSIONS = {SSLv3: "SSLv3", TLSv1: "TLSv1"}
     DEFAULT_VERSION = :TLSv1
 
-    SKIP_VERIFY_KEY = 'skip_verify'
+    SKIP_VERIFY_KEY = :skip_verify
     DEFAULT_SKIP_VERIFY = false
 
-    DISABLE_SSL_KEY = 'disable_ssl'
+    DISABLE_SSL_KEY = :disable_ssl
     DEFAULT_DISABLE_SSL = false
 
     SSL_OPTIONS = [CA_FILE_KEY, VERSION_KEY, SKIP_VERIFY_KEY]

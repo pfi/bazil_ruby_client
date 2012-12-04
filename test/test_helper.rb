@@ -123,7 +123,7 @@ SharedContext 'bazil_case_utils' do
   def setup_environment
     set :host, 'localhost'
     set :port, BAZIL_PORT
-    set :client, Bazil::Client.new(host, port, {"disable_ssl" => true})
+    set :client, Bazil::Client.new(host, port, {disable_ssl: true})
 
     set :version, "/v1"
     set :app_name, APP_NAME
