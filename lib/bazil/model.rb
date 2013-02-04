@@ -1,15 +1,15 @@
 require 'rubygems'
 require 'json'
+require 'bazil/error'
 
 module Bazil
   class Model
-    attr_reader :application, :name
+    attr_reader :model_id
 
-    def initialize(client, app, name, default_config_id = nil)
+    def initialize(client, model_id, default_config_id = nil)
       @client = client
       @http_cli = client.http_client
-      @application = app
-      @name = name
+      @model_id = model_id
 
       # Model#initialize does not have config_id
       if default_config_id
@@ -208,8 +208,8 @@ module Bazil
 
     def query(data, config_id = get_default_config_id)
       data = {'data' => data}.to_json
-      res = JSON.parse(post(target_path(config_id, 'query'), data, "Failed to post data for query"))
-      return res['max_label'], res
+      res = post(target_path(config_id, 'query'), data, "Failed to post data for query")
+      JSON.parse(res)
     end
 
     private
@@ -230,14 +230,14 @@ module Bazil
 
     def gen_uri(path = nil)
       if path
-        "/#{@client.api_version}/apps/#{@application.name}/models/#{@name}/#{path}"
+        "/#{@client.api_version}/models/#{@model_id}/#{path}"
       else
-        "/#{@client.api_version}/apps/#{@application.name}/models/#{@name}"
+        "/#{@client.api_version}/models/#{@model_id}"
       end
     end
 
     def error_suffix
-      "application = #{@application.name}, model = #{@name}"
+      "model = #{@model_id}"
     end
 
     def raise_error(message, res)
