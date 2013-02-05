@@ -1,4 +1,4 @@
-require 'bazil/model'
+require 'bazil'
 require 'net/http'
 require 'rspec'
 
@@ -109,37 +109,37 @@ describe Bazil::Client  do
   describe "model" do
     it "send get request at status" do
       client.http_client.should_receive(:get).with(status_path).and_return(FakeResponse.new("200","OK",status_result.to_json))
-      model.status.should == status_result
+      expect(model.status).to eq(status_result)
     end
 
     it "send post request at retrain without argument" do
       arg = {}
       client.http_client.should_receive(:post).with(retrain_path, arg.to_json, header_for_json(arg)).and_return(FakeResponse.new("200","OK",retrain_result.to_json))
-      model.retrain.should == retrain_result
+      expect(model.retrain).to eq(retrain_result)
     end
 
     it "send post request at retrain with times argument" do
       arg = {times: 10}
       client.http_client.should_receive(:post).with(retrain_path, arg.to_json, header_for_json(arg)).and_return(FakeResponse.new("200","OK",retrain_result.to_json))
-      model.retrain(arg).should == retrain_result
+      expect(model.retrain(arg)).to eq(retrain_result)
     end
 
     it "send post request at query" do
       arg = {data: {key: "value"}}
       client.http_client.should_receive(:post).with(query_path, arg.to_json, header_for_json(arg)).and_return(FakeResponse.new("200","OK",retrain_result.to_json))
-      model.query(arg[:data]).should == retrain_result
+      expect(model.query(arg[:data])).to eq(retrain_result)
     end
 
     it "send post request at trace" do
       arg = {method: "feature_weights", data: {key: "value"}}
       client.http_client.should_receive(:post).with(trace_path, arg.to_json, header_for_json(arg)).and_return(FakeResponse.new("200","OK",trace_result.to_json))
-      model.trace(arg[:method], arg[:data]).should == trace_result
+      expect(model.trace(arg[:method], arg[:data])).to eq(trace_result)
     end
 
     it "send post request at evaluate" do
       arg = {method: "cross_validation", config: {num_folds: 2}}
       client.http_client.should_receive(:post).with(evaluate_path, arg.to_json, header_for_json(arg)).and_return(FakeResponse.new("200","OK",evaluate_result.to_json))
-      model.evaluate(arg[:method], arg[:config]).should == evaluate_result
+      expect(model.evaluate(arg[:method], arg[:config])).to eq(evaluate_result)
     end
   end
 end
