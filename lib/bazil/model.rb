@@ -4,7 +4,7 @@ require 'bazil/error'
 
 module Bazil
   class Model
-    attr_reader :model_id
+    attr_reader :model_id, :config_id
 
     def initialize(client, model_id, config_id)
       @client = client
