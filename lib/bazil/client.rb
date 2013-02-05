@@ -165,7 +165,9 @@ module Bazil
     end
 
     def model(model_id, config_id)
-      Model.new(self, model_id, config_id)
+      model = Model.new(self, model_id, config_id)
+      model.status
+      model
     end
 
     def http_client
