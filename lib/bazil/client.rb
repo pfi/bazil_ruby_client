@@ -4,7 +4,7 @@ require 'rubygems'
 require 'json'
 require 'net/http'
 require 'net/https'
-require 'bazil/application'
+require 'bazil/model'
 require 'bazil/rest'
 require 'bazil/error'
 
@@ -144,35 +144,28 @@ module Bazil
       true
     end
 
-    def application_names
-      res = @http_cli.get(gen_uri('apps'))
-      raise_error("Failed to get names of applications", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)['application_names']
+    def models
+      res, body = @http_cli.get(gen_uri('models'))
+      raise_error("Failed to get models", res) unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
     end
 
-    def create_application(name, config = {})
-      config = config.dup
-      config['application_name'] = name
+    def create_model(config)
       data = config.to_json
-      res, body = @http_cli.post(gen_uri('apps'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise_error("Failed to create application: #{name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      Application.new(self, name)
+      res, body = @http_cli.post(gen_uri('models'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise_error("Failed to create model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      js = JSON.parse(res.body)
+      Model.new(self, js['model_id'].to_i, js['config_id'].to_i)
     end
 
-    def delete_application(name)
-      res, body = @http_cli.delete(gen_uri("apps/#{name}"))
-      raise_error("Failed to delete application: #{name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      true # TODO: return better information
+    def delete_model(model_id)
+      res, body = @http_cli.delete(gen_uri("models/#{model_id}"))
+      raise_error("Failed to delete model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      model_id
     end
 
-    def delete_all_applications
-      res, body = @http_cli.delete("/#{api_version}")
-      raise_error("Failed to delete applications: #{res.body}", res) unless res.code =~ /2[0-9][0-9]/
-      true
-    end
-
-    def application(name)
-      Application.new(self, name)
+    def model(model_id, config_id)
+      Model.new(self, model_id, config_id)
     end
 
     def http_client
@@ -181,7 +174,7 @@ module Bazil
 
     # TODO: make this changable
     def api_version
-      'v1'
+      'v2'
     end
 
     private
