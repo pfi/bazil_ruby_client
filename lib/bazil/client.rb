@@ -12,102 +12,73 @@ module Bazil
   class Client
     extend Forwardable
 
-    private
+    class Options
+      attr_reader :host, :port, :scheme, :ca_file, :ssl_version, :verify_mode
 
-    CA_FILE_KEY = :ca_file
-    DEFAULT_CA_FILE = nil
+      def initialize(options)
+        if options.kind_of? String
+          options = {CA_FILE_KEY => options}
+        end
+        options = symbolize_keys(options)
 
-    VERSION_KEY = :version
-    AVAILABLE_VERSIONS = {SSLv3: "SSLv3", TLSv1: "TLSv1"}
-    DEFAULT_VERSION = :TLSv1
+        url = URI::parse(options[URL_KEY] || DEFAULT_URL)
+        @host = url.host or raise "Failed to obtain host name from given url: url = #{url.to_s}"
+        @port = url.port or raise "Failed to obtain port number from given url: url = #{url.to_s}"
+        @scheme = url.scheme or raise "Failed to obtain scheme from given url: url = #{url.to_s}"
+        raise "Unsupported scheme '#{@scheme}'" unless AVAILABLE_SCHEMA.include? @scheme
 
-    SKIP_VERIFY_KEY = :skip_verify
-    DEFAULT_SKIP_VERIFY = false
+        @ca_file = options[CA_FILE_KEY] || DEFAULT_CA_FILE
+        if @ca_file
+          raise "ca_file option must be string value" unless @ca_file.is_a? String
+          raise "ca_file option must be absolute path" unless @ca_file[0] == '/'
+          raise "ca_file '#{@ca_file}' doesn't exist" unless File::exists? @ca_file
+        end
 
-    DISABLE_SSL_KEY = :disable_ssl
-    DEFAULT_DISABLE_SSL = false
+        ssl_version = options[SSL_VERSION_KEY] || DEFAULT_SSL_VERSION
+        raise "Unsupported SSL version '#{ssl_version}'" unless AVAILABLE_SSL_VERSIONS.has_key? ssl_version
+        @ssl_version = AVAILABLE_SSL_VERSIONS[ssl_version]
 
-    SSL_OPTIONS = [CA_FILE_KEY, VERSION_KEY, SKIP_VERIFY_KEY]
-
-    def get_disable_ssl_option(options)
-      unless options.has_key? DISABLE_SSL_KEY
-        return DEFAULT_DISABLE_SSL
+        skip_verify = options[SKIP_VERIFY_KEY] || DEFAULT_SKIP_VERIFY
+        raise "skip_verify option must be boolean value" unless skip_verify.is_a?(TrueClass) || skip_verify.is_a?(FalseClass)
+        @verify_mode = skip_verify ?  OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
       end
 
-      unless options[DISABLE_SSL_KEY].kind_of?(TrueClass) || options[DISABLE_SSL_KEY].kind_of?(FalseClass)
-        raise "disable_ssl option must be boolean value"
+      private
+
+      def symbolize_keys(hash)
+        {}.tap{|new_hash|
+          hash.each{|k,v|
+            new_hash[k.to_s.to_sym] = v
+          }
+        }
       end
 
-      options[DISABLE_SSL_KEY]
-    end
+      URL_KEY = :url
+      DEFAULT_URL = 'https://asp-bazil.preferred.jp/'
+      AVAILABLE_SCHEMA = ['http', 'https']
 
-    def get_ca_file_option(options)
-      unless options.has_key? CA_FILE_KEY
-        return DEFAULT_CA_FILE
-      end
+      CA_FILE_KEY = :ca_file
+      DEFAULT_CA_FILE = nil
 
-      unless options[CA_FILE_KEY].kind_of?(String)
-        raise "ca_file option must be stinrg value"
-      end
+      SSL_VERSION_KEY = :ssl_version
+      AVAILABLE_SSL_VERSIONS = {SSLv3: 'SSLv3', TLSv1: 'TLSv1'}
+      DEFAULT_SSL_VERSION = :TLSv1
 
-      unless options[CA_FILE_KEY][0] == '/'
-        raise "ca_file option must be absolute path"
-      end
-
-      unless File::exists? options[CA_FILE_KEY]
-        raise "ca_file '#{options[CA_FILE_KEY]}' doesn't exists"
-      end
-
-      options[CA_FILE_KEY]
-    end
-
-    def get_ssl_version_option(options)
-      unless options.has_key? VERSION_KEY
-        return AVAILABLE_VERSIONS[DEFAULT_VERSION]
-      end
-
-      unless AVAILABLE_VERSIONS.has_key? options[VERSION_KEY]
-        raise "Unknwon SSL version: '#{options[VERSION_KEY]}'"
-      end
-
-      AVAILABLE_VERSIONS[options[VERSION_KEY]]
-    end
-
-    def get_verify_mode_option(options)
-      unless options.has_key? SKIP_VERIFY_KEY
-        return DEFAULT_SKIP_VERIFY ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
-      end
-
-      unless options[SKIP_VERIFY_KEY].kind_of?(TrueClass) || options[SKIP_VERIFY_KEY].kind_of?(FalseClass)
-        raise "skip_verify option must be boolean value"
-      end
-
-      options[SKIP_VERIFY_KEY] ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+      SKIP_VERIFY_KEY = :skip_verify
+      DEFAULT_SKIP_VERIFY = false
     end
 
     def set_ssl_options(http, options)
-      if options.kind_of? String
-        options = {CA_FILE_KEY => options}
-      end
-
-      if get_disable_ssl_option(options)
-        SSL_OPTIONS.each { |k|
-          raise "'#{k}' option must be set with 'disable_ssl=false'" if options.include? k
-        }
-        return
-      end
-
-      http.use_ssl = true
-      http.ca_file = get_ca_file_option(options)
-      http.ssl_version = get_ssl_version_option(options)
-      http.verify_mode = get_verify_mode_option(options)
+      http.use_ssl = options.scheme == 'https'
+      http.ca_file = options.ca_file
+      http.ssl_version = options.ssl_version
+      http.verify_mode = options.verify_mode
     end
 
-    public
-
-    def initialize(host, port, options={})
-      http = Net::HTTP.new(host, port)
-      set_ssl_options(http, options)
+    def initialize(options={})
+      opt = Options.new(options)
+      http = Net::HTTP.new(opt.host, opt.port)
+      set_ssl_options(http,opt)
       @http_cli = REST.new(http)
     end
 
