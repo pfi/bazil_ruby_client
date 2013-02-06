@@ -20,14 +20,14 @@ module Bazil
     end
 
     def model_config
-      res = @http_cli.get(gen_uri("config"))
+      res = @http_cli.get(gen_uri())
       raise_error("Failed to get model config: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
     def update_model_config(conf)
-      res = send(:put, 'config', conf.to_json, "Failed to update model config")
-      JSON.parse(res)
+      res = @http_cli.put(gen_uri(), conf.to_json, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => conf.to_json.length.to_s})
+      JSON.parse(res.body)
     end
 
     def config
@@ -38,18 +38,14 @@ module Bazil
 
     def update_config(config)
       res = send(:put, "configs/#{@config_id}", config.to_json, "Failed to updated config")
-      true
+      {}
     end
 
-    def train(annotation, data)
-      raise ArgumentError, 'Annotation must be not nil' if annotation.nil?
-      raise ArgumentError, 'Data must be not nil' if data.nil?
+    def train(train_data)
+      raise ArgumentError, 'Annotation must be not nil' unless train_data.has_key? :annotation
+      raise ArgumentError, 'Data must be not nil' unless train_data.has_key? :data
 
-      new_data = {}
-      new_data['annotation'] = annotation if annotation
-      new_data['data'] = data if data
-      new_data['config_id'] = @config_id
-      body = post("training_data", new_data.to_json, "Failed to post training data")
+      body = post("training_data", train_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
@@ -67,7 +63,7 @@ module Bazil
       JSON.parse(body)
     end
 
-    def evaluate(method, config)
+    def evaluate(method, config = nil)
       new_data = {}
       new_data['method'] = method if method
       new_data['config'] = config if config
@@ -82,54 +78,46 @@ module Bazil
     end
 
     def training_data(id)
+      raise ArgumentError, 'Id must be Integer' unless id.kind_of? Integer
       res = @http_cli.get(gen_uri("training_data/#{id}"))
       raise_error("Failed to get training data of the model: id = #{id}, #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)
     end
 
-    def list_training_data(condition)
-      # TODO: validate parameter
+    def list_training_data(condition = {})
       condition = condition.dup
       condition[:page] ||= 1
-      condition[:page_size] ||= 10
-      condition[:query] ||= { :version => '1' }
-      condition[:query][:version] = '1' unless condition[:query][:version]
+      condition[:per_page] ||= 10
 
-      res = post("training_data/query?page=#{condition[:page]}&page_size=#{condition[:page_size]}",
-                 condition[:query].to_json, "Failed to query training data of the model")
-      JSON.parse(res)
+      res = @http_cli.get(gen_uri("training_data?page=#{condition[:page]}&per_page=#{condition[:per_page]}"))
+      raise_error("Failed to query training data of the model", res) unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)
     end
 
     def clear_training_data
       res = @http_cli.delete(gen_uri("training_data"))
       raise_error("Failed to clear training_data of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
-      true
+      {}
     end
 
-    def put_training_data(annotation, data)
-      new_data = {}
-      new_data['annotation'] = annotation if annotation
-      new_data['data'] = data if data
-      new_data['config_id'] = @config_id
+    def put_training_data(new_data = {})
+      raise ArgumentError, 'Data must be not nil' unless new_data.has_key? :data
       body = post('training_data', new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
-    def update_training_data(id, annotation, data)
-      # TODO: type check of id
-      new_data = {}
-      new_data['annotation'] = annotation if annotation
-      new_data['data'] = data if data
-      new_data['config_id'] = @config_id
+    def update_training_data(id, new_data = {})
+      raise ArgumentError, 'Id must be Integer' unless id.kind_of? Integer
+      raise ArgumentError, 'Data must be not nil' unless new_data.has_key? :data
       send(:put, "training_data/#{id}", new_data.to_json, "Failed to update training data")
-      true
+      {}
     end
 
     def delete_training_data(id)
-      # TODO: type check of id
+      raise ArgumentError, 'Id must be Integer' unless id.kind_of? Integer
       res = @http_cli.delete(gen_uri("training_data/#{id}"))
       raise_error("Failed to delete a training data: id = #{id}, #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
-      true
+      {}
     end
 
     def query(data)

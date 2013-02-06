@@ -87,7 +87,11 @@ module Bazil
     def models
       res, body = @http_cli.get(gen_uri('models'))
       raise_error("Failed to get models", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
+      JSON.parse(res.body)["models"].map{|model|
+        model["config_ids"].map{|config_id|
+          Model.new(self, model["id"].to_i, config_id.to_i)
+        }
+      }.flatten
     end
 
     def create_model(config)
@@ -101,14 +105,21 @@ module Bazil
     def delete_model(model_id)
       res, body = @http_cli.delete(gen_uri("models/#{model_id}"))
       raise_error("Failed to delete model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      model_id
+      JSON.parse(res.body)
     end
+
     def create_config(model_id, config)
-      TODO: impl
+      data = config.to_json
+      res, body = @http_cli.post(gen_uri("models/#{model_id}/configs"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise_error("Failed to create new configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      js = JSON.parse(res.body)
+      Model.new(self, model_id, js['config_id'].to_i)
     end
 
     def delete_config(model_id, config_id)
-      TODO: impl
+      res, body = @http_cli.delete(gen_uri("models/#{model_id}/configs/#{config_id}"))
+      raise_error("Failed to delete configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      JSON.parse(res.body)
     end
 
     def model(model_id, config_id)
