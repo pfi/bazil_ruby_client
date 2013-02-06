@@ -27,7 +27,7 @@ module Bazil
         @scheme = url.scheme or raise "Failed to obtain scheme from given url: url = #{url.to_s}"
         raise "Unsupported scheme '#{@scheme}'" unless AVAILABLE_SCHEMA.include? @scheme
 
-        @ca_file = options[CA_FILE_KEY] # || DEFAULT_CA_FILE
+        @ca_file = options[CA_FILE_KEY] || DEFAULT_CA_FILE
         if @ca_file
           raise "ca_file option must be string value" unless @ca_file.is_a? String
           raise "ca_file option must be absolute path" unless @ca_file[0] == '/'
@@ -74,8 +74,6 @@ module Bazil
       http.ssl_version = options.ssl_version
       http.verify_mode = options.verify_mode
     end
-
-    public
 
     def initialize(options={})
       opt = Options.new(options)
