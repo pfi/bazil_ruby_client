@@ -96,13 +96,7 @@ describe Bazil::Client  do
     }
   end
 
-  it "check status at initialize" do
-    client.http_client.should_receive(:get).with(status_path).and_return(FakeResponse.new("200","OK",status_result.to_json))
-    model = Bazil::Model.new(client, model_id, config_id)
-  end
-
   let(:model) {
-    client.http_client.should_receive(:get).with(status_path).and_return(FakeResponse.new("200","OK",status_result.to_json))
     Bazil::Model.new(client, model_id, config_id)
   }
 
