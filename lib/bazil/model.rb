@@ -94,9 +94,9 @@ module Bazil
       JSON.parse(res.body)
     end
 
-    def clear_training_data
+    def delete_all_training_data
       res = @http_cli.delete(gen_uri("training_data"))
-      raise_error("Failed to clear training_data of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
+      raise_error("Failed to delete all training_data of the model: #{error_suffix}", res) unless res.code =~ /2[0-9][0-9]/
       {}
     end
 
