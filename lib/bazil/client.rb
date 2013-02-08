@@ -84,8 +84,13 @@ module Bazil
 
     def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
 
-    def models
-      res, body = @http_cli.get(gen_uri('models'))
+    def models(options = {})
+      queries = {}
+      queries[:tag_id] = options[:tag_id].to_i if options.has_key? :tag_id
+      queries[:page] = options[:page].to_i if options.has_key? :page
+      queries[:per_page] = options[:per_page].to_i if options.has_key? :per_page
+
+      res, body = @http_cli.get(gen_uri("models",queries))
       raise_error("Failed to get models", res) unless res.code =~ /2[0-9][0-9]/
       JSON.parse(res.body)["models"].map{|model|
         model["config_ids"].map{|config_id|
@@ -139,8 +144,12 @@ module Bazil
 
     private
 
-    def gen_uri(path)
-      "/#{api_version}/#{path}"
+    def gen_uri(path, queries = {})
+      if queries.empty?
+        "/#{api_version}/#{path}"
+      else
+        "/#{api_version}/#{path}?#{queries.map{|k,v| "#{k}=#{v}"}.join('&')}"
+      end
     end
 
     def raise_error(message, res)
