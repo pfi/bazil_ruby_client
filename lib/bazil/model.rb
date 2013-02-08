@@ -42,6 +42,7 @@ module Bazil
     end
 
     def train(train_data)
+      train_data = symbolize_keys(train_data)
       raise ArgumentError, 'Annotation must be not nil' unless train_data.has_key? :annotation
       raise ArgumentError, 'Data must be not nil' unless train_data.has_key? :data
 
@@ -101,12 +102,14 @@ module Bazil
     end
 
     def put_training_data(new_data = {})
+      new_data = symbolize_keys(new_data)
       raise ArgumentError, 'Data must be not nil' unless new_data.has_key? :data
       body = post('training_data', new_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
     def update_training_data(id, new_data = {})
+      new_data = symbolize_keys(new_data)
       raise ArgumentError, 'Id must be Integer' unless id.kind_of? Integer
       raise ArgumentError, 'Data must be not nil' unless new_data.has_key? :data
       send(:put, "training_data/#{id}", new_data.to_json, "Failed to update training data")
@@ -127,6 +130,22 @@ module Bazil
     end
 
     private
+
+    def symbolize_keys(data)
+      {}.tap{|d|
+        data.each{|k,v|
+          d[k.to_sym] = v
+        }
+      }
+    end
+
+    def stringify_keys(data)
+      {}.tap{|d|
+        data.each{|k,v|
+          d[k.to_s] = v
+        }
+      }
+    end
 
     def post(path, data, error_message)
       send(:post, path, data, error_message)
