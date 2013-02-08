@@ -138,10 +138,10 @@ describe Bazil::Client  do
       expect(model.list_training_data(arg)).to eq(result)
     end
 
-    it "clear_training_data request DELETE /models/:model_id/training_data" do
+    it "delete_all_training_data request DELETE /models/:model_id/training_data" do
       result = {}
       client.http_client.should_receive(:delete).with(gen_model_path("/training_data")).and_return(FakeResponse.new("200", "OK", result.to_json))
-      expect(model.clear_training_data).to eq(result)
+      expect(model.delete_all_training_data).to eq(result)
     end
 
     it "training_data request GET /models/:model_id/training_data/:training_data_id" do
@@ -159,7 +159,7 @@ describe Bazil::Client  do
       expect(model.update_training_data(training_data_id, arg)).to eq(result)
     end
 
-    it "clear_training_data request DELETE /models/:model_id/training_data/:training_data_id" do
+    it "delete_all_training_data request DELETE /models/:model_id/training_data/:training_data_id" do
       training_data_id = 123
       result = {}
       client.http_client.should_receive(:delete).with(gen_model_path("/training_data/#{training_data_id}")).and_return(FakeResponse.new("200", "OK", result.to_json))
