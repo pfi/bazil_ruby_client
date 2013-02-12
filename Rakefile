@@ -1,12 +1,11 @@
 require 'bundler'
 Bundler::GemHelper.install_tasks
 
-require 'rake/testtask'
+require 'rspec/core/rake_task'
 
-Rake::TestTask.new(:test) do |test|
-  test.libs << 'lib' << 'test'
-  test.test_files = FileList['test/*.rb']
-  test.verbose = true
+RSpec::Core::RakeTask.new(:rspec) do |spec|
+  spec.pattern = 'spec/**/*_spec.rb'
+  spec.rspec_opts = ['--color --backtrace']
 end
 
 task :default => [:build]
