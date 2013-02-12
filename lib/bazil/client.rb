@@ -84,41 +84,19 @@ module Bazil
 
     def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
 
-    def status
-      res = @http_cli.get(gen_uri('status'))
-      raise_error("Failed to get status of the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
+    def models(options = {})
+      queries = {}
+      queries[:tag_id] = options[:tag_id].to_i if options.has_key? :tag_id
+      queries[:page] = options[:page].to_i if options.has_key? :page
+      queries[:per_page] = options[:per_page].to_i if options.has_key? :per_page
 
-    def config
-      res = @http_cli.get(gen_uri('config'))
-      raise_error("Failed to get config of the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
-
-    def update_config(config)
-      data = config.to_json
-      res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise_error("Failed to update config of the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
-
-    def errors
-      res = @http_cli.get(gen_uri('errors'))
-      raise_error("Failed to get information of errors from the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
-
-    def clear_errors
-      res = @http_cli.delete(gen_uri('errors'))
-      raise_error("Failed to clear error information of the server", res) unless res.code =~ /2[0-9][0-9]/
-      true
-    end
-
-    def models
-      res, body = @http_cli.get(gen_uri('models'))
+      res, body = @http_cli.get(gen_uri("models",queries))
       raise_error("Failed to get models", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
+      JSON.parse(res.body)["models"].map{|model|
+        model["config_ids"].map{|config_id|
+          Model.new(self, model["id"].to_i, config_id.to_i)
+        }
+      }.flatten
     end
 
     def create_model(config)
@@ -132,7 +110,21 @@ module Bazil
     def delete_model(model_id)
       res, body = @http_cli.delete(gen_uri("models/#{model_id}"))
       raise_error("Failed to delete model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      model_id
+      JSON.parse(res.body)
+    end
+
+    def create_config(model_id, config)
+      data = config.to_json
+      res, body = @http_cli.post(gen_uri("models/#{model_id}/configs"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise_error("Failed to create new configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      js = JSON.parse(res.body)
+      Model.new(self, model_id, js['config_id'].to_i)
+    end
+
+    def delete_config(model_id, config_id)
+      res, body = @http_cli.delete(gen_uri("models/#{model_id}/configs/#{config_id}"))
+      raise_error("Failed to delete configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      JSON.parse(res.body)
     end
 
     def model(model_id, config_id)
@@ -152,8 +144,12 @@ module Bazil
 
     private
 
-    def gen_uri(path)
-      "/#{api_version}/#{path}"
+    def gen_uri(path, queries = {})
+      if queries.empty?
+        "/#{api_version}/#{path}"
+      else
+        "/#{api_version}/#{path}?#{queries.map{|k,v| "#{k}=#{v}"}.join('&')}"
+      end
     end
 
     def raise_error(message, res)
