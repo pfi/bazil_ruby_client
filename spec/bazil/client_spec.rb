@@ -1,6 +1,3 @@
-require 'bazil'
-require 'net/http'
-require 'rspec'
 require 'spec_helper'
 
 describe Bazil::Client do

@@ -1,5 +1,11 @@
-require 'rubygems'
 require 'simplecov'
-require 'rspec'
+SimpleCov.start do
+  add_filter 'spec'
+  add_filter 'vendor/bundle'
+end
 
-SimpleCov.start
+require 'rubygems'
+require 'bazil'
+require 'net/http'
+require 'rspec'
+require 'rspec/mocks'

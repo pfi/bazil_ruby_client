@@ -1,7 +1,3 @@
-require 'bazil'
-require 'net/http'
-require 'rspec'
-require 'rspec/mocks'
 require 'spec_helper'
 
 class FakeResponse
