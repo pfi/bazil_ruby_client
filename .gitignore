@@ -1,1 +1,9 @@
-pkg/
+*.gem
+*.rbc
+.bundle
+.config
+Gemfile.lock
+/coverage/
+/vendor/bundle/
+/pkg/
+/rdoc/
