@@ -1,6 +1,7 @@
 require 'bazil'
 require 'net/http'
 require 'rspec'
+require 'spec_helper'
 
 describe Bazil::Client do
   describe Bazil::Client::Options, "with empty option provide default" do
