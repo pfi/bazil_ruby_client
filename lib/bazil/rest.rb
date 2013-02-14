@@ -54,14 +54,12 @@ module Bazil
     def add_api_signature(uri, data, header = {})
       return uri, header unless @api_key and @secret_key
 
-      uri = uri.split('?')
-      base = uri[0]
+      base,param = uri.split('?',2)
       current_time = Time.now.httpdate
 
       signature = ''
       signature = data.gsub(/\s/, '') if data
-      parameters = []
-      parameters = uri[1..-1] if uri.size > 1
+      parameters = (param || "").split('&')
       parameters << "api_key=#{@api_key}"
       signature << parameters.sort.join()
       signature << current_time

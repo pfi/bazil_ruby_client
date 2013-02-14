@@ -4,7 +4,7 @@ require 'rubygems'
 require 'json'
 require 'net/http'
 require 'net/https'
-require 'bazil/application'
+require 'bazil/model'
 require 'bazil/rest'
 require 'bazil/error'
 
@@ -12,167 +12,125 @@ module Bazil
   class Client
     extend Forwardable
 
-    private
+    class Options
+      attr_reader :host, :port, :scheme, :ca_file, :ssl_version, :verify_mode
 
-    CA_FILE_KEY = :ca_file
-    DEFAULT_CA_FILE = nil
+      def initialize(options)
+        if options.kind_of? String
+          options = {CA_FILE_KEY => options}
+        end
+        options = symbolize_keys(options)
 
-    VERSION_KEY = :version
-    AVAILABLE_VERSIONS = {SSLv3: "SSLv3", TLSv1: "TLSv1"}
-    DEFAULT_VERSION = :TLSv1
+        url = URI::parse(options[URL_KEY] || DEFAULT_URL)
+        @host = url.host or raise "Failed to obtain host name from given url: url = #{url.to_s}"
+        @port = url.port or raise "Failed to obtain port number from given url: url = #{url.to_s}"
+        @scheme = url.scheme or raise "Failed to obtain scheme from given url: url = #{url.to_s}"
+        raise "Unsupported scheme '#{@scheme}'" unless AVAILABLE_SCHEMA.include? @scheme
 
-    SKIP_VERIFY_KEY = :skip_verify
-    DEFAULT_SKIP_VERIFY = false
+        @ca_file = options[CA_FILE_KEY] || DEFAULT_CA_FILE
+        if @ca_file
+          raise "ca_file option must be string value" unless @ca_file.is_a? String
+          raise "ca_file option must be absolute path" unless @ca_file[0] == '/'
+          raise "ca_file '#{@ca_file}' doesn't exist" unless File::exists? @ca_file
+        end
 
-    DISABLE_SSL_KEY = :disable_ssl
-    DEFAULT_DISABLE_SSL = false
+        ssl_version = options[SSL_VERSION_KEY] || DEFAULT_SSL_VERSION
+        raise "Unsupported SSL version '#{ssl_version}'" unless AVAILABLE_SSL_VERSIONS.has_key? ssl_version
+        @ssl_version = AVAILABLE_SSL_VERSIONS[ssl_version]
 
-    SSL_OPTIONS = [CA_FILE_KEY, VERSION_KEY, SKIP_VERIFY_KEY]
-
-    def get_disable_ssl_option(options)
-      unless options.has_key? DISABLE_SSL_KEY
-        return DEFAULT_DISABLE_SSL
+        skip_verify = options[SKIP_VERIFY_KEY] || DEFAULT_SKIP_VERIFY
+        raise "skip_verify option must be boolean value" unless skip_verify.is_a?(TrueClass) || skip_verify.is_a?(FalseClass)
+        @verify_mode = skip_verify ?  OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
       end
 
-      unless options[DISABLE_SSL_KEY].kind_of?(TrueClass) || options[DISABLE_SSL_KEY].kind_of?(FalseClass)
-        raise "disable_ssl option must be boolean value"
+      private
+
+      def symbolize_keys(hash)
+        {}.tap{|new_hash|
+          hash.each{|k,v|
+            new_hash[k.to_s.to_sym] = v
+          }
+        }
       end
 
-      options[DISABLE_SSL_KEY]
-    end
+      URL_KEY = :url
+      DEFAULT_URL = 'https://asp-bazil.preferred.jp/'
+      AVAILABLE_SCHEMA = ['http', 'https']
 
-    def get_ca_file_option(options)
-      unless options.has_key? CA_FILE_KEY
-        return DEFAULT_CA_FILE
-      end
+      CA_FILE_KEY = :ca_file
+      DEFAULT_CA_FILE = nil
 
-      unless options[CA_FILE_KEY].kind_of?(String)
-        raise "ca_file option must be stinrg value"
-      end
+      SSL_VERSION_KEY = :ssl_version
+      AVAILABLE_SSL_VERSIONS = {SSLv3: 'SSLv3', TLSv1: 'TLSv1'}
+      DEFAULT_SSL_VERSION = :TLSv1
 
-      unless options[CA_FILE_KEY][0] == '/'
-        raise "ca_file option must be absolute path"
-      end
-
-      unless File::exists? options[CA_FILE_KEY]
-        raise "ca_file '#{options[CA_FILE_KEY]}' doesn't exists"
-      end
-
-      options[CA_FILE_KEY]
-    end
-
-    def get_ssl_version_option(options)
-      unless options.has_key? VERSION_KEY
-        return AVAILABLE_VERSIONS[DEFAULT_VERSION]
-      end
-
-      unless AVAILABLE_VERSIONS.has_key? options[VERSION_KEY]
-        raise "Unknwon SSL version: '#{options[VERSION_KEY]}'"
-      end
-
-      AVAILABLE_VERSIONS[options[VERSION_KEY]]
-    end
-
-    def get_verify_mode_option(options)
-      unless options.has_key? SKIP_VERIFY_KEY
-        return DEFAULT_SKIP_VERIFY ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
-      end
-
-      unless options[SKIP_VERIFY_KEY].kind_of?(TrueClass) || options[SKIP_VERIFY_KEY].kind_of?(FalseClass)
-        raise "skip_verify option must be boolean value"
-      end
-
-      options[SKIP_VERIFY_KEY] ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER
+      SKIP_VERIFY_KEY = :skip_verify
+      DEFAULT_SKIP_VERIFY = false
     end
 
     def set_ssl_options(http, options)
-      if options.kind_of? String
-        options = {CA_FILE_KEY => options}
-      end
-
-      if get_disable_ssl_option(options)
-        SSL_OPTIONS.each { |k|
-          raise "'#{k}' option must be set with 'disable_ssl=false'" if options.include? k
-        }
-        return
-      end
-
-      http.use_ssl = true
-      http.ca_file = get_ca_file_option(options)
-      http.ssl_version = get_ssl_version_option(options)
-      http.verify_mode = get_verify_mode_option(options)
+      http.use_ssl = options.scheme == 'https'
+      http.ca_file = options.ca_file
+      http.ssl_version = options.ssl_version
+      http.verify_mode = options.verify_mode
     end
 
-    public
-
-    def initialize(host, port, options={})
-      http = Net::HTTP.new(host, port)
-      set_ssl_options(http, options)
+    def initialize(options={})
+      opt = Options.new(options)
+      http = Net::HTTP.new(opt.host, opt.port)
+      set_ssl_options(http,opt)
       @http_cli = REST.new(http)
     end
 
     def_delegators :@http_cli, :read_timeout, :read_timeout=, :set_api_keys
 
-    def status
-      res = @http_cli.get(gen_uri('status'))
-      raise_error("Failed to get status of the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
+    def models(options = {})
+      queries = {}
+      queries[:tag_id] = options[:tag_id].to_i if options.has_key? :tag_id
+      queries[:page] = options[:page].to_i if options.has_key? :page
+      queries[:per_page] = options[:per_page].to_i if options.has_key? :per_page
+
+      res, body = @http_cli.get(gen_uri("models",queries))
+      raise_error("Failed to get models", res) unless res.code =~ /2[0-9][0-9]/
+      JSON.parse(res.body)["models"].map{|model|
+        model["config_ids"].map{|config_id|
+          Model.new(self, model["id"].to_i, config_id.to_i)
+        }
+      }.flatten
     end
 
-    def config
-      res = @http_cli.get(gen_uri('config'))
-      raise_error("Failed to get config of the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
-
-    def update_config(config)
+    def create_model(config)
       data = config.to_json
-      res = @http_cli.put(gen_uri('config'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise_error("Failed to update config of the server", res) unless res.code =~ /2[0-9][0-9]/
+      res, body = @http_cli.post(gen_uri('models'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise_error("Failed to create model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      js = JSON.parse(res.body)
+      Model.new(self, js['model_id'].to_i, js['config_id'].to_i)
+    end
+
+    def delete_model(model_id)
+      res, body = @http_cli.delete(gen_uri("models/#{model_id}"))
+      raise_error("Failed to delete model", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
       JSON.parse(res.body)
     end
 
-    def errors
-      res = @http_cli.get(gen_uri('errors'))
-      raise_error("Failed to get information of errors from the server", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)
-    end
-
-    def clear_errors
-      res = @http_cli.delete(gen_uri('errors'))
-      raise_error("Failed to clear error information of the server", res) unless res.code =~ /2[0-9][0-9]/
-      true
-    end
-
-    def application_names
-      res = @http_cli.get(gen_uri('apps'))
-      raise_error("Failed to get names of applications", res) unless res.code =~ /2[0-9][0-9]/
-      JSON.parse(res.body)['application_names']
-    end
-
-    def create_application(name, config = {})
-      config = config.dup
-      config['application_name'] = name
+    def create_config(model_id, config)
       data = config.to_json
-      res, body = @http_cli.post(gen_uri('apps'), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
-      raise_error("Failed to create application: #{name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      Application.new(self, name)
+      res, body = @http_cli.post(gen_uri("models/#{model_id}/configs"), data, {'Content-Type' => 'application/json; charset=UTF-8', 'Content-Length' => data.length.to_s})
+      raise_error("Failed to create new configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      js = JSON.parse(res.body)
+      Model.new(self, model_id, js['config_id'].to_i)
     end
 
-    def delete_application(name)
-      res, body = @http_cli.delete(gen_uri("apps/#{name}"))
-      raise_error("Failed to delete application: #{name}", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
-      true # TODO: return better information
+    def delete_config(model_id, config_id)
+      res, body = @http_cli.delete(gen_uri("models/#{model_id}/configs/#{config_id}"))
+      raise_error("Failed to delete configuration", res) unless res.code =~ /2[0-9][0-9]/ # TODO: return detailed error information
+      JSON.parse(res.body)
     end
 
-    def delete_all_applications
-      res, body = @http_cli.delete("/#{api_version}")
-      raise_error("Failed to delete applications: #{res.body}", res) unless res.code =~ /2[0-9][0-9]/
-      true
-    end
-
-    def application(name)
-      Application.new(self, name)
+    def model(model_id, config_id)
+      model = Model.new(self, model_id, config_id)
+      model.status
+      model
     end
 
     def http_client
@@ -181,13 +139,17 @@ module Bazil
 
     # TODO: make this changable
     def api_version
-      'v1'
+      'v2'
     end
 
     private
 
-    def gen_uri(path)
-      "/#{api_version}/#{path}"
+    def gen_uri(path, queries = {})
+      if queries.empty?
+        "/#{api_version}/#{path}"
+      else
+        "/#{api_version}/#{path}?#{queries.map{|k,v| "#{k}=#{v}"}.join('&')}"
+      end
     end
 
     def raise_error(message, res)
