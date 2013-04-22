@@ -46,7 +46,7 @@ module Bazil
       raise ArgumentError, 'Annotation must be not nil' unless train_data.has_key? :annotation
       raise ArgumentError, 'Data must be not nil' unless train_data.has_key? :data
 
-      body = post("training_data", train_data.to_json, "Failed to post training data")
+      body = post("training_data?train=true", train_data.to_json, "Failed to post training data")
       JSON.parse(body)
     end
 
