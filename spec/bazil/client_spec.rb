@@ -5,7 +5,7 @@ describe Bazil::Client do
     let(:option) { Bazil::Client::Options.new({}) }
 
     it "host name" do
-      expect(option.host).to eq('asp-bazil.preferred.jp')
+      expect(option.host).to eq('bazil.preferred.jp')
     end
 
     it "port name" do
