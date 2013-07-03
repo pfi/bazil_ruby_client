@@ -4,7 +4,7 @@ $:.push File.expand_path('../lib', __FILE__)
 Gem::Specification.new do |gem|
   gem.name        = "bazil_client"
   gem.description = "Ruby client of Bazil"
-  gem.homepage    = "https://asp-bazil.preferred.jp/"
+  gem.homepage    = "https://bazil.preferred.jp/"
   gem.summary     = gem.description
   gem.version     = File.read("VERSION").strip
   gem.authors     = ["Nobuyuki Kubota"]

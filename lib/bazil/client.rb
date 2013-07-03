@@ -83,7 +83,7 @@ module Bazil
       end
 
       URL_KEY = :url
-      DEFAULT_URL = 'https://asp-bazil.preferred.jp/'
+      DEFAULT_URL = 'https://bazil.preferred.jp/'
       AVAILABLE_SCHEMA = ['http', 'https']
 
       CA_FILE_KEY = :ca_file
